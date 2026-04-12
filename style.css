@@ -1,0 +1,251 @@
+/* ===== VARIÁVEIS GLOBAIS ===== */
+:root {
+  --primary:   #0b6aa6;
+  --bg:        #f4f7fb;
+  --card:      #ffffff;
+  --muted:     #6b7280;
+  --success:   #1b7a3a;
+  --danger:    #c53030;
+  --danger-bg: #fff5f5;
+  --danger-border: #fc8181;
+}
+
+/* ===== RESET / BASE ===== */
+body {
+  font-family: Inter, system-ui, Arial, Helvetica, sans-serif;
+  margin: 12px;
+  background: var(--bg);
+  color: #111;
+}
+
+h1 {
+  color: var(--primary);
+  margin: 6px 0 8px 0;
+  font-size: 20px;
+}
+
+/* ===== METADADOS ===== */
+.meta {
+  font-size: 14px;
+  color: #222;
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.meta label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta input[type="text"],
+.meta input[type="date"] {
+  padding: 8px;
+  border: 1px solid #d1e2ef;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.meta .btn-save {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ===== CONTROLES TOPO ===== */
+.controls-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.select-local {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1e2ef;
+  background: #fff;
+}
+
+/* ===== SETOR / CARD ===== */
+.sector {
+  border: 1px solid #d6e0ea;
+  border-radius: 8px;
+  background: var(--card);
+  padding: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(10, 30, 50, 0.04);
+}
+
+.sector h2 {
+  margin: 0 0 8px 0;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+/* ===== LINHA DE ITEM ===== */
+.item-row {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border-top: 1px dashed #eef4f8;
+  border-radius: 6px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.item-row:first-of-type {
+  border-top: none;
+}
+
+/* ── Estado N/C ── */
+.item-row.is-nc {
+  background: var(--danger-bg);
+  border-top-color: var(--danger-border);
+  border: 1px solid var(--danger-border);
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-label {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ===== OPÇÕES (RÁDIO) ===== */
+.options {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+/* Label N/C fica vermelho quando selecionado */
+.options label.nc-selected {
+  color: var(--danger);
+  font-weight: 700;
+  background: #fee2e2;
+}
+
+/* ===== TEXTAREA DE OBSERVAÇÃO ===== */
+textarea.obs {
+  display: block;
+  margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #cfdbe8;
+  border-radius: 6px;
+  resize: vertical;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+/* Borda vermelha enquanto observação estiver vazia em item N/C */
+textarea.obs.obs-required {
+  border: 2px solid var(--danger);
+  background: #fff8f8;
+  outline: none;
+}
+
+textarea.obs.obs-required::placeholder {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ===== AVISO INLINE ABAIXO DA TEXTAREA ===== */
+.obs-warning {
+  display: none;
+  font-size: 12px;
+  color: var(--danger);
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.obs-warning.visible {
+  display: block;
+}
+
+/* ===== BOTÕES PRINCIPAIS ===== */
+.btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.btn.secondary {
+  background: #4b5563;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== CONTROLES RODAPÉ ===== */
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+/* ===== RELATÓRIO ===== */
+.report-box {
+  background: var(--card);
+  padding: 12px;
+  border: 1px solid #dfeaf3;
+  border-radius: 8px;
+}
+
+.status-C  { color: var(--success); font-weight: 700; }
+.status-NC { color: var(--danger);  font-weight: 700; }
+.status-NA { color: #666;           font-weight: 700; }
+
+/* ===== FILTRO / MISC ===== */
+.filter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.small { font-size: 13px; color: var(--muted); }
+
+ul { margin: 6px 0 12px 18px; }
+
+/* ===== RESPONSIVO ===== */
+@media (max-width: 800px) {
+  .row-main    { flex-direction: column; align-items: stretch; }
+  .options     { justify-content: flex-start; }
+  .meta        { flex-direction: column; align-items: flex-start; }
+  .btn         { width: 100%; }
+  .controls    { flex-direction: column; align-items: stretch; }
+}
