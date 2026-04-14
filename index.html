@@ -393,22 +393,60 @@
     {setor:"Pré Limpeza", item:"🧯 Placa (Painel energizado)", status:"NC"}
   ];
 
-  /*****************************************************************************
-   * MENU DE LOCAIS
-   *****************************************************************************/
-  const selectLocal = document.getElementById('select-local');
+const selectLocal = document.getElementById("select-local");
+const checklistDiv = document.getElementById("checklist");
 
-  function getUniqueSetores(data) {
-    const seen = [];
-    data.forEach(d => { if (!seen.includes(d.setor)) seen.push(d.setor); });
-    return seen;
-  }
+function getSetores() {
+  return [...new Set(data.map(d => d.setor))];
+}
 
-  function populateLocalMenu() {
-    Array.from(selectLocal.querySelectorAll('option'))
-      .filter(o => o.value !== 'ALL')
-      .forEach(o => o.remove());
+function populateSelect() {
+  getSetores().forEach(setor => {
+    const opt = document.createElement("option");
+    opt.value = setor;
+    opt.textContent = setor;
+    selectLocal.appendChild(opt);
+  });
+}
 
-    getUniqueSetores(initialData).forEach(s => {
-      const opt = document.createElement('option
+function renderChecklist() {
+  const selected = selectLocal.value;
+  checklistDiv.innerHTML = "";
 
+  const filtrado = selected === "ALL"
+    ? data
+    : data.filter(d => d.setor === selected);
+
+  let setorAtual = "";
+
+  filtrado.forEach(item => {
+    if (item.setor !== setorAtual) {
+      setorAtual = item.setor;
+
+      const titulo = document.createElement("div");
+      titulo.className = "setor";
+      titulo.textContent = setorAtual;
+      checklistDiv.appendChild(titulo);
+    }
+
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      ${item.item}
+      <select>
+        <option ${item.status==="C"?"selected":""}>C</option>
+        <option ${item.status==="NC"?"selected":""}>NC</option>
+        <option ${item.status==="NA"?"selected":""}>NA</option>
+      </select>
+    `;
+    checklistDiv.appendChild(div);
+  });
+}
+
+// Inicialização
+populateSelect();
+renderChecklist();
+</script>
+
+</body>
+</html>
