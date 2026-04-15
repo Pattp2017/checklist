@@ -391,62 +391,534 @@
     {setor:"Pré Limpeza", item:"🧯 Placa (Somente pessoas autorizadas).", status:"NC"},
     {setor:"Pré Limpeza", item:"🧯 Placa (Indicativa para o extintor de incêndio).", status:"NC"},
     {setor:"Pré Limpeza", item:"🧯 Placa (Painel energizado)", status:"NC"}
-  ];
+];
 
-const selectLocal = document.getElementById("select-local");
-const checklistDiv = document.getElementById("checklist");
 
-function getSetores() {
-  return [...new Set(data.map(d => d.setor))];
-}
 
-function populateSelect() {
-  getSetores().forEach(setor => {
-    const opt = document.createElement("option");
-    opt.value = setor;
-    opt.textContent = setor;
-    selectLocal.appendChild(opt);
-  });
-}
+    // ----- CONSTRUIR MENU DE LOCAIS -----
+    const selectLocal = document.getElementById('select-local');
 
-function renderChecklist() {
-  const selected = selectLocal.value;
-  checklistDiv.innerHTML = "";
-
-  const filtrado = selected === "ALL"
-    ? data
-    : data.filter(d => d.setor === selected);
-
-  let setorAtual = "";
-
-  filtrado.forEach(item => {
-    if (item.setor !== setorAtual) {
-      setorAtual = item.setor;
-
-      const titulo = document.createElement("div");
-      titulo.className = "setor";
-      titulo.textContent = setorAtual;
-      checklistDiv.appendChild(titulo);
+    function getUniqueSetores(data){
+      const set = [];
+      data.forEach(d => {
+        if(!set.includes(d.setor)) set.push(d.setor);
+      });
+      return set;
     }
 
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      ${item.item}
-      <select>
-        <option ${item.status==="C"?"selected":""}>C</option>
-        <option ${item.status==="NC"?"selected":""}>NC</option>
-        <option ${item.status==="NA"?"selected":""}>NA</option>
-      </select>
-    `;
-    checklistDiv.appendChild(div);
-  });
-}
+    // preencher options do select
+    function populateLocalMenu(){
+      // remove existentes exceto "Todos os locais"
+      const existing = Array.from(selectLocal.querySelectorAll('option')).filter(o=>o.value !== 'ALL');
+      existing.forEach(o=> o.remove());
 
-// Inicialização
-populateSelect();
-renderChecklist();
-</script>
+      const setores = getUniqueSetores(initialData);
+      setores.forEach(s=>{
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        selectLocal.appendChild(opt);
+      });
+    }
+    populateLocalMenu();
 
+    // ----- GERAR OS SETORES/ITENS, mas inicialmente escondidos -----
+    const checklistEl = document.getElementById('checklist');
+
+    function createRadio(name, val, checked=false){
+      const r = document.createElement('input');
+      r.type = 'radio'; r.name = name; r.value = val;
+      if(checked) r.checked = true;
+      r.style.width='18px'; r.style.height='18px';
+      return r;
+    }
+
+    // cria uma seção por setor com os itens — mas todas as seções terão display:none
+    function renderAllSections(data){
+      checklistEl.innerHTML = '';
+      const sections = {};
+      data.forEach((d, idx) => {
+        if(!sections[d.setor]){
+          const section = document.createElement('section');
+          section.className = 'sector';
+          section.dataset.setor = d.setor;
+          section.style.display = 'none'; // escondida até a seleção
+          const h = document.createElement('h2'); h.textContent = d.setor;
+          section.appendChild(h);
+          checklistEl.appendChild(section);
+          sections[d.setor] = section;
+        }
+
+        const section = sections[d.setor];
+
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.dataset.setor = d.setor;
+        row.dataset.item = d.item;
+
+        const main = document.createElement('div'); main.className='row-main';
+        const lbl = document.createElement('div'); lbl.className='item-label'; lbl.textContent = d.item;
+        main.appendChild(lbl);
+
+        const opts = document.createElement('div'); opts.className='options';
+        const name = `radio_${d.setor}_${idx}`;
+
+        const labC = document.createElement('label');
+        const rC = createRadio(name,'C', d.status === 'C');
+        labC.appendChild(rC); labC.appendChild(document.createTextNode('C'));
+        opts.appendChild(labC);
+
+        const labNC = document.createElement('label');
+        const rNC = createRadio(name,'NC', d.status === 'NC');
+        labNC.appendChild(rNC); labNC.appendChild(document.createTextNode('N/C'));
+        opts.appendChild(labNC);
+
+        const labNA = document.createElement('label');
+        const rNA = createRadio(name,'NA', d.status === 'NA' || d.status === '' || d.status == null);
+        labNA.appendChild(rNA); labNA.appendChild(document.createTextNode('N/A'));
+        opts.appendChild(labNA);
+
+        // checkbox foto
+        const photoWrap = document.createElement('label'); photoWrap.className='photo-chk';
+        const photoChk = document.createElement('input'); photoChk.type='checkbox';
+        photoWrap.appendChild(photoChk); photoWrap.appendChild(document.createTextNode('Arquivar foto'));
+        main.appendChild(opts); main.appendChild(photoWrap);
+        row.appendChild(main);
+
+        const obs = document.createElement('textarea');
+        obs.className = 'obs';
+        obs.placeholder = 'Observação (obrigatória quando N/C)';
+        obs.rows = 2;
+        obs.style.display = d.status === 'NC' ? 'block' : 'none';
+        if(d.obs) obs.value = d.obs;
+        row.appendChild(obs);
+
+        [rC,rNC,rNA].forEach(radio=>{
+          radio.addEventListener('change', ()=>{
+            if(rNC.checked){ obs.style.display='block'; obs.focus(); }
+            else { obs.style.display='none'; obs.value=''; }
+          });
+        });
+
+        section.appendChild(row);
+      });
+    }
+
+    renderAllSections(initialData);
+
+    // ----- AÇÃO: "Abrir local" ou trocar o select -----
+    const btnCarregarLocal = document.getElementById('btn-carregar-local');
+
+    function showLocal(local){
+      // esconde todas seções
+      const secs = checklistEl.querySelectorAll('.sector');
+      secs.forEach(s => { s.style.display = 'none'; });
+
+      if(local === 'ALL'){
+        // mostra todas
+        secs.forEach(s => s.style.display = 'block');
+      } else {
+        // mostra só a seção selecionada
+        const target = checklistEl.querySelector(`.sector[data-setor="${CSS.escape(local)}"]`);
+        if(target) target.style.display = 'block';
+      }
+
+      // rolar até o topo do checklist para facilitar em celular
+      checklistEl.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    // botão e change handler
+    btnCarregarLocal.addEventListener('click', ()=>{
+      const local = selectLocal.value;
+      showLocal(local);
+    });
+
+    selectLocal.addEventListener('change', ()=>{
+      // opcional: auto-aplicar ao mudar seleção
+      const local = selectLocal.value;
+      showLocal(local);
+    });
+
+    // por padrão mostrar "Todos os locais"
+    showLocal('ALL');
+
+    // ----- restante das funcionalidades: metadados, relatório, CSV e validação -----
+    const metaEmpresaEl = document.getElementById('meta-empresa');
+    const metaRespEl = document.getElementById('meta-responsavel');
+    const metaDataEl = document.getElementById('meta-data');
+    const metaHorarioEl = document.getElementById('meta-horario');
+    const btnSalvarMeta = document.getElementById('btn-salvar-meta');
+
+    function getMetadados(){
+      return {
+        empresa: metaEmpresaEl.value.trim(),
+        responsavel: metaRespEl.value.trim(),
+        data: metaDataEl.value,
+        horario: metaHorarioEl.value.trim()
+      };
+    }
+
+    btnSalvarMeta.addEventListener('click', ()=>{
+      const m = getMetadados();
+      alert('Metadados salvos:\\n' + `Empresa: ${m.empresa}\\nResponsável: ${m.responsavel}\\nData: ${m.data}\\nHorário: ${m.horario}`);
+    });
+
+    // relatório/csv
+    const btnView = document.getElementById('btn-view-report');
+    const report = document.getElementById('report');
+    const reportMeta = document.getElementById('report-meta');
+    const reportSummary = document.getElementById('report-summary');
+    const reportList = document.getElementById('report-list');
+    const reportFilter = document.getElementById('report-filter');
+    const btnDownloadCsv = document.getElementById('btn-download-csv');
+    const btnJustNc = document.getElementById('btn-just-nc');
+
+    function collectResponses(){
+      const rows = document.querySelectorAll('.item-row');
+      const out = [];
+      rows.forEach(row=>{
+        // row may be hidden; we still want to collect all (CSV filtered later)
+        const setor = row.dataset.setor;
+        const item = row.dataset.item;
+        const radios = row.querySelectorAll('input[type="radio"]');
+        let status = 'NA';
+        radios.forEach(r=>{ if(r.checked) status = r.value; });
+        const obs = row.querySelector('textarea') ? row.querySelector('textarea').value.trim() : '';
+        const photo = row.querySelector('input[type="checkbox"]') ? row.querySelector('input[type="checkbox"]').checked : false;
+        out.push({setor,item,status,obs,photo});
+      });
+      return out;
+    }
+
+    function buildReport(filter='ALL'){
+      const m = getMetadados();
+      reportMeta.innerHTML = `<strong>Empresa:</strong> ${m.empresa} — <strong>Responsável:</strong> ${m.responsavel} — <strong>Data:</strong> ${m.data} — <strong>Horário:</strong> ${m.horario}`;
+
+      const all = collectResponses();
+      const total = all.length;
+      const counts = {C:0,NC:0,NA:0};
+      all.forEach(r=> counts[r.status] = (counts[r.status]||0)+1);
+
+      reportSummary.innerHTML = `
+        <div><strong>Total de itens:</strong> ${total}</div>
+        <div style="margin-top:6px"><strong>Resumo:</strong>
+          <span style="margin-left:8px" class="status-C">C: ${counts.C}</span>
+          <span style="margin-left:10px" class="status-NC">N/C: ${counts.NC}</span>
+          <span style="margin-left:10px" class="status-NA">N/A: ${counts.NA}</span>
+        </div>
+      `;
+
+      // Agrupa por setor e filtra
+      const bySetor = {};
+      all.forEach(r=>{
+        if(filter !== 'ALL' && r.status !== filter) return;
+        if(!bySetor[r.setor]) bySetor[r.setor] = [];
+        bySetor[r.setor].push(r);
+      });
+
+      reportList.innerHTML = '';
+      Object.keys(bySetor).forEach(setor=>{
+        const sdiv = document.createElement('div');
+        sdiv.style.marginTop = '10px';
+        sdiv.innerHTML = `<h3 style="margin:6px 0">${setor} (${bySetor[setor].length})</h3>`;
+        const ul = document.createElement('ul');
+        bySetor[setor].forEach(r=>{
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${r.item}</strong> — <span class="status-${r.status}">${r.status}</span>` + (r.obs ? ` — Observação: ${r.obs}` : '') + (r.photo ? ` — Foto: sim` : '');
+          ul.appendChild(li);
+        });
+        sdiv.appendChild(ul);
+        reportList.appendChild(sdiv);
+      });
+
+      const hasItems = Object.keys(bySetor).some(k => bySetor[k].length>0);
+      btnDownloadCsv.disabled = !hasItems;
+      report.style.display = 'block';
+    }
+
+    btnView.addEventListener('click', ()=> buildReport(reportFilter.value));
+    reportFilter.addEventListener('change', ()=> buildReport(reportFilter.value));
+    btnJustNc.addEventListener('click', ()=> { reportFilter.value='NC'; buildReport('NC'); });
+
+    // validação antes CSV
+    function validateBeforeCSV(rows){
+      const missing = [];
+      rows.forEach((r, i) => {
+        if(r.status === 'NC' && (!r.obs || r.obs.length < 3)){
+          missing.push({index:i,setor:r.setor,item:r.item});
+        }
+      });
+      return missing;
+    }
+
+    function toCSV(rows){
+      const meta = getMetadados();
+      const header = ['Empresa','Responsavel','Data','Horario','Setor','Item','Status','Observacao','ArquivarFoto'];
+      const lines = [header.join(',')];
+      rows.forEach(r=>{
+        const esc = txt => `"${String(txt||'').replace(/"/g,'""')}"`;
+        lines.push([esc(meta.empresa),esc(meta.responsavel),esc(meta.data),esc(meta.horario),esc(r.setor),esc(r.item),esc(r.status),esc(r.obs), r.photo ? 'TRUE' : 'FALSE'].join(','));
+      });
+      return lines.join('\n');
+    }
+
+    btnDownloadCsv.addEventListener('click', ()=>{
+      const filter = reportFilter.value;
+      const all = collectResponses();
+      const rows = all.filter(r => filter==='ALL' ? true : r.status === filter);
+      const missing = validateBeforeCSV(rows);
+      if(missing.length > 0){
+        const msg = `Existem ${missing.length} item(s) marcado(s) como N/C sem observação (mínimo 3 caracteres).\\nPor favor preencha as observações antes de gerar o CSV.\\nExemplo: ${missing[0].setor} — ${missing[0].item}`;
+        alert(msg);
+        const targetRow = Array.from(document.querySelectorAll('.item-row')).find(r => r.dataset.setor === missing[0].setor && r.dataset.item === missing[0].item);
+        if(targetRow){
+          const ta = targetRow.querySelector('textarea');
+          if(ta){ ta.style.display='block'; ta.focus(); }
+        }
+        return;
+      }
+      if(rows.length === 0){ alert('Não há itens no filtro selecionado.'); return; }
+      const csv = toCSV(rows);
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const now = new Date(); const stamp = now.toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.href = url; a.download = `relatorio_vistoria_${stamp}.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // Se quiser que eu cole o array initialData completo (com todos os itens do Excel) dentro do HTML
+    // para você ter o arquivo pronto (já fiz em versões anteriores), eu posso injetar tudo literal.
+    // Me diga: quer que eu coloque aqui a lista completa (sim/não)?
+  </script>
 </body>
-</html>
+</html>" quero saber onde vinculo o persist.js. Este é meu js "// persist.js
+// Persistência local para o checklist — usa localStorage para salvar/recuperar.
+// Requer que os elementos do DOM usem os mesmos seletores/atributos do HTML
+// que te entreguei (inputs meta-..., .item-row com data-setor/data-item, radios,
+// textarea.obs, checkbox para foto).
+(function(){
+  const STORAGE_KEY = 'vistoria_santa_amelia_v1';
+
+  // --- Helpers ---
+  function saveAll(){
+    const payload = {
+      meta: getMetadados(),
+      items: collectResponses()
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      // opcional: visual feedback
+      // console.log('Salvo localmente', payload);
+    } catch(e){
+      console.error('Erro ao salvar no localStorage:', e);
+      alert('Erro ao salvar localmente: ' + (e && e.message));
+    }
+  }
+
+  function loadAll(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch(e){
+      console.error('JSON inválido no localStorage:', e);
+      return null;
+    }
+  }
+
+  function clearAll(){
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function downloadJSON(obj, filename='vistoria_backup.json'){
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // IMPORTANTE: Estas duas funções assumem que o HTML define essas funções ou
+  // elementos. Se o teu HTML usar nomes diferentes, adapte os seletores.
+  function getMetadados(){
+    const empresa = document.getElementById('meta-empresa') ? document.getElementById('meta-empresa').value.trim() : '';
+    const responsavel = document.getElementById('meta-responsavel') ? document.getElementById('meta-responsavel').value.trim() : '';
+    const data = document.getElementById('meta-data') ? document.getElementById('meta-data').value : '';
+    const horario = document.getElementById('meta-horario') ? document.getElementById('meta-horario').value.trim() : '';
+    return { empresa, responsavel, data, horario };
+  }
+
+  function setMetadados(meta){
+    if(!meta) return;
+    if(document.getElementById('meta-empresa')) document.getElementById('meta-empresa').value = meta.empresa || '';
+    if(document.getElementById('meta-responsavel')) document.getElementById('meta-responsavel').value = meta.responsavel || '';
+    if(document.getElementById('meta-data')) document.getElementById('meta-data').value = meta.data || '';
+    if(document.getElementById('meta-horario')) document.getElementById('meta-horario').value = meta.horario || '';
+  }
+
+  function collectResponses(){
+    const rows = document.querySelectorAll('.item-row');
+    const out = [];
+    rows.forEach(row => {
+      const setor = row.dataset.setor || '';
+      const item = row.dataset.item || '';
+      const radios = row.querySelectorAll('input[type="radio"]');
+      let status = 'NA';
+      radios.forEach(r => { if(r.checked) status = r.value; });
+      const obs = row.querySelector('textarea') ? row.querySelector('textarea').value.trim() : '';
+      const photoChk = row.querySelector('input[type="checkbox"]');
+      const photo = photoChk ? !!photoChk.checked : false;
+      out.push({setor, item, status, obs, photo});
+    });
+    return out;
+  }
+
+  function restoreResponses(items){
+    if(!Array.isArray(items)) return;
+    const rows = Array.from(document.querySelectorAll('.item-row'));
+    items.forEach(it => {
+      const row = rows.find(r => r.dataset.setor === it.setor && r.dataset.item === it.item);
+      if(!row) return;
+      const radios = row.querySelectorAll('input[type="radio"]');
+      radios.forEach(r => { r.checked = (r.value === it.status); });
+      const ta = row.querySelector('textarea');
+      if(ta){
+        ta.value = it.obs || '';
+        ta.style.display = (it.status === 'NC') ? 'block' : (ta.value ? 'block' : 'none');
+      }
+      const photoChk = row.querySelector('input[type="checkbox"]');
+      if(photoChk) photoChk.checked = !!it.photo;
+    });
+  }
+
+  // --- Attach listeners to inputs for autosave ---
+  function attachAutoSave(){
+    // metadados
+    ['meta-empresa','meta-responsavel','meta-data','meta-horario'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('change', saveAll);
+      el.addEventListener('input', saveAll);
+    });
+
+    // radios, textarea, checkboxes
+    document.addEventListener('change', function(e){
+      const target = e.target;
+      if(!target) return;
+      if(target.matches('.item-row input[type="radio"], .item-row input[type="checkbox"], .item-row textarea')){
+        // small debounce
+        if(window._persist_debounce) clearTimeout(window._persist_debounce);
+        window._persist_debounce = setTimeout(saveAll, 250);
+      }
+    }, true);
+
+    // também salvar ao sair da página (opcional)
+    window.addEventListener('beforeunload', saveAll);
+  }
+
+  // --- Public API: export/import/clear via botões que você pode inserir no HTML ---
+  function createControlsUI(){
+    // cria container flutuante no topo direito (opcional)
+    const cont = document.createElement('div');
+    cont.style.position='fixed';
+    cont.style.right='12px';
+    cont.style.bottom='12px';
+    cont.style.zIndex='9999';
+    cont.style.display='flex';
+    cont.style.flexDirection='column';
+    cont.style.gap='8px';
+
+    const btnSave = document.createElement('button');
+    btnSave.textContent = 'Salvar local';
+    btnSave.style.padding='8px 10px';
+    btnSave.style.borderRadius='6px';
+    btnSave.style.border='none';
+    btnSave.style.background='#0b6aa6';
+    btnSave.style.color='#fff';
+    btnSave.addEventListener('click', ()=> { saveAll(); alert('Salvo localmente.'); });
+
+    const btnExport = document.createElement('button');
+    btnExport.textContent = 'Exportar backup (.json)';
+    btnExport.style.padding='8px 10px';
+    btnExport.style.borderRadius='6px';
+    btnExport.style.border='1px solid #ddd';
+    btnExport.addEventListener('click', ()=> {
+      const payload = { meta: getMetadados(), items: collectResponses(), exportedAt: new Date().toISOString() };
+      downloadJSON(payload, 'vistoria_santa_amelia_backup.json');
+    });
+
+    const inputImport = document.createElement('input');
+    inputImport.type = 'file';
+    inputImport.accept = 'application/json';
+    inputImport.style.display = 'none';
+    inputImport.addEventListener('change', function(e){
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        try {
+          const obj = JSON.parse(ev.target.result);
+          if(obj.meta) setMetadados(obj.meta);
+          if(obj.items) restoreResponses(obj.items);
+          saveAll();
+          alert('Backup importado com sucesso.');
+        } catch(err){
+          alert('Erro ao importar JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(f);
+    });
+
+    const btnImport = document.createElement('button');
+    btnImport.textContent = 'Importar backup (.json)';
+    btnImport.style.padding='8px 10px';
+    btnImport.style.borderRadius='6px';
+    btnImport.style.border='1px solid #ddd';
+    btnImport.addEventListener('click', ()=> inputImport.click());
+
+    const btnClear = document.createElement('button');
+    btnClear.textContent = 'Limpar armazenamento';
+    btnClear.style.padding='8px 10px';
+    btnClear.style.borderRadius='6px';
+    btnClear.style.border='1px solid #ddd';
+    btnClear.addEventListener('click', ()=> {
+      if(confirm('Remover todos os dados salvos localmente?')){ clearAll(); alert('Armazenamento local limpo.'); }
+    });
+
+    cont.appendChild(btnSave);
+    cont.appendChild(btnExport);
+    cont.appendChild(btnImport);
+    cont.appendChild(btnClear);
+    document.body.appendChild(cont);
+  }
+
+  // Inicialização: tenta carregar e restaurar
+  function init(){
+    // espera DOM
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+      return;
+    }
+    // carrega
+    const stored = loadAll();
+    if(stored){
+      if(stored.meta) setMetadados(stored.meta);
+      if(stored.items) restoreResponses(stored.items);
+      console.log('Dados restaurados do localStorage.');
+    }
+    attachAutoSave();
+    createControlsUI();
+  }
+
+  // executar
+  init();
+
+  // expõe (opcional) para console
+  window.VistoriaPersist = {
+    saveAll, loadAll, clearAll, collectResponses, setMetadados
+  };
+})();"
