@@ -223,3 +223,53 @@ ul      { margin: 6px 0 12px 18px; }
   .btn       { width: 100%; }
   .controls  { flex-direction: column; align-items: stretch; }
 }
+/* =========================================================
+   DITADO POR VOZ
+========================================================= */
+
+.speech-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.btn-speech {
+  border: 1px solid #0b6aa6;
+  background: #ffffff;
+  color: #0b6aa6;
+  padding: 8px 14px;
+  border-radius: 7px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-speech.gravando {
+  background: #b42318;
+  border-color: #b42318;
+  color: #ffffff;
+}
+
+.btn-speech:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.speech-status {
+  font-size: 13px;
+  color: #666;
+}
+
+@media (max-width: 600px) {
+  .speech-controls {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .btn-speech {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
