@@ -76,7 +76,6 @@
     <select id="select-local" class="select-local" aria-label="Selecionar local">
       <option value="ALL">Todos os locais</option>
     </select>
-    <button class="btn" id="btn-carregar-local">Abrir local</button>
   </div>
 
   <div id="checklist"></div>
@@ -560,8 +559,7 @@
     renderAllSections(initialData);
 
     // ----- AÇÃO: "Abrir local" ou trocar o select -----
-    const btnCarregarLocal = document.getElementById('btn-carregar-local');
-
+  
     function showLocal(local){
       // esconde todas seções
       const secs = checklistEl.querySelectorAll('.sector');
@@ -581,10 +579,6 @@
     }
 
     // botão e change handler
-    btnCarregarLocal.addEventListener('click', ()=>{
-      const local = selectLocal.value;
-      showLocal(local);
-    });
 
     selectLocal.addEventListener('change', ()=>{
       // opcional: auto-aplicar ao mudar seleção
