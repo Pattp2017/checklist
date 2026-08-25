@@ -691,9 +691,21 @@
     // para você ter o arquivo pronto (já fiz em versões anteriores), eu posso injetar tudo literal.
     // Me diga: quer que eu coloque aqui a lista completa (sim/não)?
   </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
- <script src="persist.js"></script>
+<script>
+  const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+
+  const supabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+</script>
+
+<script src="persist.js"></script>
 <script src="speech.js"></script>
+
 </body>
 </html>
 
