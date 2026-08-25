@@ -669,7 +669,13 @@
 
     function buildReport(filter='ALL'){
       const m = getMetadados();
-      reportMeta.innerHTML = `<strong>Empresa:</strong> ${m.empresa} — <strong>Responsável:</strong> ${m.responsavel} — <strong>Data:</strong> ${m.data} — <strong>Horário:</strong> ${m.horario}`;
+      reportMeta.innerHTML = `
+  <strong>Empresa:</strong> ${m.empresa_nome || ''} —
+  <strong>Responsável técnico:</strong> ${m.responsavel_tecnico || ''} —
+  <strong>Responsável pela auditoria:</strong> ${m.responsavel_auditoria || ''} —
+  <strong>Data:</strong> ${m.data_auditoria || ''} —
+  <strong>Horário:</strong> ${m.horario || ''}
+`;
 
       const all = collectResponses();
       const total = all.length;
@@ -734,7 +740,18 @@
       const lines = [header.join(',')];
       rows.forEach(r=>{
         const esc = txt => `"${String(txt||'').replace(/"/g,'""')}"`;
-        lines.push([esc(meta.empresa),esc(meta.responsavel),esc(meta.data),esc(meta.horario),esc(r.setor),esc(r.item),esc(r.status),esc(r.obs), r.photo ? 'TRUE' : 'FALSE'].join(','));
+        lines.push([
+  esc(meta.empresa_nome),
+  esc(meta.responsavel_tecnico),
+  esc(meta.responsavel_auditoria),
+  esc(meta.data_auditoria),
+  esc(meta.horario),
+  esc(r.setor),
+  esc(r.item),
+  esc(r.status),
+  esc(r.obs),
+  r.photo ? 'TRUE' : 'FALSE'
+].join(','));
       });
       return lines.join('\n');
     }
