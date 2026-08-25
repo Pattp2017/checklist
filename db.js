@@ -14,48 +14,39 @@
   const TABELA_VISTORIAS =
     'checklist_vistorias';
 
+  const TABELA_ITENS =
+    'checklist_itens';
+
 
   // =======================================================
   // HEADERS
   // =======================================================
 
-  function getHeaders() {
+  function getHeaders(prefer = 'return=representation') {
     return {
-      'apikey': SUPABASE_KEY,
-
-      'Authorization':
+      apikey: SUPABASE_KEY,
+      Authorization:
         'Bearer ' + SUPABASE_KEY,
-
-      'Content-Type':
-        'application/json',
-
-      'Prefer':
-        'return=representation'
+      'Content-Type': 'application/json',
+      Prefer: prefer
     };
   }
 
 
   // =======================================================
-  // PEGAR ID DA VISTORIA LOCAL
+  // ID DA VISTORIA
   // =======================================================
 
   function getVistoriaId() {
-
-    const id =
+    return (
       localStorage.getItem(
         'checklist_vistoria_id'
-      );
-
-    return id || null;
+      ) || null
+    );
   }
 
 
-  // =======================================================
-  // SALVAR ID LOCALMENTE
-  // =======================================================
-
   function setVistoriaId(id) {
-
     if (!id) return;
 
     localStorage.setItem(
@@ -65,12 +56,7 @@
   }
 
 
-  // =======================================================
-  // REMOVER ID
-  // =======================================================
-
   function clearVistoriaId() {
-
     localStorage.removeItem(
       'checklist_vistoria_id'
     );
@@ -78,74 +64,42 @@
 
 
   // =======================================================
-  // PEGAR DADOS DA TELA
+  // DADOS DA VISTORIA
   // =======================================================
 
   function getDadosFormulario() {
 
-    const empresaId =
-      document.getElementById(
-        'meta-empresa-id'
-      );
-
-    const empresaNome =
-      document.getElementById(
-        'meta-empresa-nome'
-      );
-
-    const responsavelTecnico =
-      document.getElementById(
-        'meta-responsavel-tecnico'
-      );
-
-    const responsavelAuditoria =
-      document.getElementById(
-        'meta-responsavel-auditoria'
-      );
-
-    const dataAuditoria =
-      document.getElementById(
-        'meta-data-auditoria'
-      );
-
-    const horario =
-      document.getElementById(
-        'meta-horario'
-      );
-
-
     return {
 
       empresa_id:
-        empresaId &&
-        empresaId.value
-          ? empresaId.value
-          : null,
+        document.getElementById(
+          'meta-empresa-id'
+        )?.value || null,
 
       empresa_nome:
-        empresaNome
-          ? empresaNome.value.trim()
-          : '',
+        document.getElementById(
+          'meta-empresa-nome'
+        )?.value.trim() || '',
 
       responsavel_tecnico:
-        responsavelTecnico
-          ? responsavelTecnico.value.trim()
-          : '',
+        document.getElementById(
+          'meta-responsavel-tecnico'
+        )?.value.trim() || '',
 
       responsavel_auditoria:
-        responsavelAuditoria
-          ? responsavelAuditoria.value.trim()
-          : '',
+        document.getElementById(
+          'meta-responsavel-auditoria'
+        )?.value.trim() || '',
 
       data_auditoria:
-        dataAuditoria
-          ? dataAuditoria.value
-          : null,
+        document.getElementById(
+          'meta-data-auditoria'
+        )?.value || null,
 
       horario:
-        horario
-          ? horario.value.trim()
-          : '',
+        document.getElementById(
+          'meta-horario'
+        )?.value.trim() || '',
 
       status:
         'EM_ANDAMENTO'
@@ -160,57 +114,41 @@
   function validar(dados) {
 
     if (!dados.empresa_nome) {
-      alert(
-        'Informe a empresa.'
-      );
-
+      alert('Informe a empresa.');
       return false;
     }
-
 
     if (!dados.responsavel_auditoria) {
       alert(
         'Informe o responsável pela auditoria.'
       );
-
       return false;
     }
-
 
     if (!dados.data_auditoria) {
       alert(
         'Informe a data da auditoria.'
       );
-
       return false;
     }
-
 
     return true;
   }
 
 
   // =======================================================
-  // CRIAR NOVA VISTORIA
+  // CRIAR VISTORIA
   // =======================================================
 
   async function criarVistoria(dados) {
 
     const resposta =
       await fetch(
-        SUPABASE_URL +
-        '/rest/v1/' +
-        TABELA_VISTORIAS,
+        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}`,
         {
-
           method: 'POST',
-
-          headers:
-            getHeaders(),
-
-          body:
-            JSON.stringify(dados)
-
+          headers: getHeaders(),
+          body: JSON.stringify(dados)
         }
       );
 
@@ -235,11 +173,7 @@
       JSON.parse(texto);
 
 
-    if (
-      !registros ||
-      !registros.length
-    ) {
-
+    if (!registros?.length) {
       throw new Error(
         'Supabase não retornou a vistoria criada.'
       );
@@ -260,7 +194,7 @@
 
 
   // =======================================================
-  // ATUALIZAR VISTORIA EXISTENTE
+  // ATUALIZAR VISTORIA
   // =======================================================
 
   async function atualizarVistoria(
@@ -270,27 +204,15 @@
 
     const resposta =
       await fetch(
-        SUPABASE_URL +
-        '/rest/v1/' +
-        TABELA_VISTORIAS +
-        '?id=eq.' +
-        encodeURIComponent(id),
+        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}?id=eq.${encodeURIComponent(id)}`,
         {
-
           method: 'PATCH',
-
-          headers:
-            getHeaders(),
-
-          body:
-            JSON.stringify({
-              ...dados,
-
-              atualizado_em:
-                new Date()
-                  .toISOString()
-            })
-
+          headers: getHeaders(),
+          body: JSON.stringify({
+            ...dados,
+            atualizado_em:
+              new Date().toISOString()
+          })
         }
       );
 
@@ -323,15 +245,187 @@
       JSON.parse(texto);
 
 
-    return registros[0] || {
-      id,
-      ...dados
-    };
+    return (
+      registros[0] || {
+        id,
+        ...dados
+      }
+    );
   }
 
 
   // =======================================================
-  // SALVAR VISTORIA
+  // PEGAR ITENS DA TELA
+  // =======================================================
+
+  function getItensChecklist(
+    vistoriaId
+  ) {
+
+    if (
+      !window.VistoriaPersist ||
+      typeof window.VistoriaPersist
+        .collectResponses !==
+        'function'
+    ) {
+
+      throw new Error(
+        'Persistência local não carregada.'
+      );
+    }
+
+
+    const respostas =
+      window.VistoriaPersist
+        .collectResponses();
+
+
+    return respostas.map(
+      resposta => ({
+        vistoria_id:
+          vistoriaId,
+
+        setor:
+          resposta.setor,
+
+        item:
+          resposta.item,
+
+        status:
+          resposta.status,
+
+        observacao:
+          resposta.obs || null,
+
+        arquivar_foto:
+          !!resposta.photo,
+
+        foto_path:
+          null
+      })
+    );
+  }
+
+
+  // =======================================================
+  // APAGAR ITENS ANTIGOS
+  // =======================================================
+
+  async function apagarItens(
+    vistoriaId
+  ) {
+
+    const resposta =
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}`,
+        {
+          method: 'DELETE',
+          headers:
+            getHeaders(
+              'return=minimal'
+            )
+        }
+      );
+
+
+    if (!resposta.ok) {
+
+      const texto =
+        await resposta.text();
+
+      console.error(
+        'Erro ao apagar itens antigos:',
+        resposta.status,
+        texto
+      );
+
+      throw new Error(texto);
+    }
+  }
+
+
+  // =======================================================
+  // INSERIR ITENS
+  // =======================================================
+
+  async function inserirItens(
+    itens
+  ) {
+
+    if (!itens.length) {
+      return [];
+    }
+
+
+    const resposta =
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}`,
+        {
+          method: 'POST',
+          headers:
+            getHeaders(
+              'return=minimal'
+            ),
+          body:
+            JSON.stringify(itens)
+        }
+      );
+
+
+    if (!resposta.ok) {
+
+      const texto =
+        await resposta.text();
+
+      console.error(
+        'Erro ao inserir itens:',
+        resposta.status,
+        texto
+      );
+
+      throw new Error(texto);
+    }
+
+
+    return itens;
+  }
+
+
+  // =======================================================
+  // SALVAR ITENS DA VISTORIA
+  // =======================================================
+
+  async function salvarItens(
+    vistoriaId
+  ) {
+
+    const itens =
+      getItensChecklist(
+        vistoriaId
+      );
+
+
+    await apagarItens(
+      vistoriaId
+    );
+
+
+    await inserirItens(
+      itens
+    );
+
+
+    console.log(
+      `${itens.length} item(ns) salvo(s).`
+    );
+
+
+    return itens;
+  }
+
+
+  // =======================================================
+  // SALVAR TUDO
   // =======================================================
 
   async function salvarVistoria() {
@@ -351,12 +445,11 @@
     }
 
 
-    // Primeiro salva localmente
     if (
       window.VistoriaPersist &&
-      typeof
-        window.VistoriaPersist
-          .saveAll === 'function'
+      typeof window.VistoriaPersist
+        .saveAll ===
+        'function'
     ) {
 
       window.VistoriaPersist
@@ -365,9 +458,7 @@
 
 
     if (botao) {
-
       botao.disabled = true;
-
       botao.textContent =
         'Salvando...';
     }
@@ -377,7 +468,7 @@
 
       let vistoria;
 
-      const vistoriaId =
+      let vistoriaId =
         getVistoriaId();
 
 
@@ -395,17 +486,25 @@
           await criarVistoria(
             dados
           );
+
+        vistoriaId =
+          vistoria.id;
       }
+
+
+      await salvarItens(
+        vistoriaId
+      );
+
+
+      alert(
+        'Vistoria e itens salvos com sucesso.'
+      );
 
 
       console.log(
         'Vistoria salva:',
         vistoria
-      );
-
-
-      alert(
-        'Vistoria salva com sucesso.'
       );
 
 
@@ -415,13 +514,13 @@
     } catch (erro) {
 
       console.error(
-        'Falha ao salvar vistoria:',
+        'Falha ao salvar:',
         erro
       );
 
 
       alert(
-        'Não foi possível salvar no banco.\n\n' +
+        'Não foi possível salvar tudo no banco.\n\n' +
         'Os dados continuam salvos neste aparelho.'
       );
 
@@ -432,9 +531,7 @@
     } finally {
 
       if (botao) {
-
         botao.disabled = false;
-
         botao.textContent =
           'Salvar';
       }
@@ -451,7 +548,7 @@
     clearVistoriaId();
 
     console.log(
-      'ID da vistoria atual removido.'
+      'Vistoria atual encerrada localmente.'
     );
   }
 
@@ -463,6 +560,8 @@
   window.VistoriaDB = {
 
     salvarVistoria,
+
+    salvarItens,
 
     novaVistoria,
 
