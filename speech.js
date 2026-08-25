@@ -2,18 +2,31 @@
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  function configurarVozNaObservacao() {
-    const linhas = document.querySelectorAll('.item-row');
+  function configurarLinha(row) {
+    const textarea = row.querySelector('textarea.obs');
+    const radios = row.querySelectorAll('input[type="radio"]');
 
-    linhas.forEach((row) => {
-      const textarea = row.querySelector('textarea.obs');
-      const radioNC = row.querySelector('input[type="radio"][value="NC"]');
+    if (!textarea || !radios.length) return;
 
-      if (!textarea || !radioNC) return;
+    function getStatus() {
+      const marcado = row.querySelector('input[type="radio"]:checked');
+      return marcado ? marcado.value : '';
+    }
 
-      // Evita duplicar controles
-      if (textarea.dataset.speechReady === 'true') return;
-      textarea.dataset.speechReady = 'true';
+    function removerControleVoz() {
+      const existente = row.querySelector('.speech-controls');
+
+      if (existente) {
+        existente.remove();
+      }
+    }
+
+    function criarControleVoz() {
+      // Só cria se realmente estiver N/C
+      if (getStatus() !== 'NC') return;
+
+      // Evita duplicar
+      if (row.querySelector('.speech-controls')) return;
 
       const container = document.createElement('div');
       container.className = 'speech-controls';
@@ -31,26 +44,6 @@
 
       textarea.insertAdjacentElement('afterend', container);
 
-      function atualizarVisibilidade() {
-        const ncSelecionado = radioNC.checked;
-
-        if (ncSelecionado) {
-          container.style.display = 'flex';
-        } else {
-          container.style.display = 'none';
-          status.textContent = '';
-        }
-      }
-
-      atualizarVisibilidade();
-
-      const radios = row.querySelectorAll('input[type="radio"]');
-
-      radios.forEach((radio) => {
-        radio.addEventListener('change', atualizarVisibilidade);
-      });
-
-      // Sem suporte ao reconhecimento de voz
       if (!SpeechRecognition) {
         btn.disabled = true;
         btn.textContent = '🎙️ Voz indisponível';
@@ -67,8 +60,8 @@
       let textoInicial = '';
       let textoFinal = '';
 
-      btn.addEventListener('click', () => {
-        if (!radioNC.checked) return;
+      btn.addEventListener('click', function () {
+        if (getStatus() !== 'NC') return;
 
         if (!ouvindo) {
           textoInicial = textarea.value.trim();
@@ -84,7 +77,7 @@
         }
       });
 
-      recognition.onstart = () => {
+      recognition.onstart = function () {
         ouvindo = true;
 
         btn.textContent = '⏹️ Parar';
@@ -93,52 +86,55 @@
         status.textContent = 'Ouvindo...';
       };
 
-      recognition.onresult = (event) => {
-        let textoTemporario = '';
+      recognition.onresult = function (event) {
+        let temporario = '';
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        for (
+          let i = event.resultIndex;
+          i < event.results.length;
+          i++
+        ) {
           const trecho = event.results[i][0].transcript;
 
           if (event.results[i].isFinal) {
             textoFinal += trecho + ' ';
           } else {
-            textoTemporario += trecho;
+            temporario += trecho;
           }
         }
 
         let resultado = textoInicial;
 
-        if (resultado && (textoFinal || textoTemporario)) {
+        if (resultado && (textoFinal || temporario)) {
           resultado += ' ';
         }
 
-        resultado += textoFinal + textoTemporario;
+        resultado += textoFinal + temporario;
 
-        // O texto vai diretamente para a Observação
+        // TEXTO DIRETO NO CAMPO OBSERVAÇÃO
         textarea.value = resultado.trim();
 
-        // Dispara evento para o persist.js salvar
         textarea.dispatchEvent(
           new Event('input', { bubbles: true })
         );
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = function (event) {
         console.error(
           'Erro no reconhecimento de voz:',
           event.error
         );
 
         if (event.error === 'not-allowed') {
-          status.textContent = 'Permissão do microfone negada.';
+          status.textContent = 'Microfone não autorizado.';
         } else if (event.error === 'no-speech') {
           status.textContent = 'Nenhuma fala detectada.';
         } else {
-          status.textContent = 'Erro no reconhecimento de voz.';
+          status.textContent = 'Erro no reconhecimento.';
         }
       };
 
-      recognition.onend = () => {
+      recognition.onend = function () {
         ouvindo = false;
 
         btn.textContent = '🎙️ Ditar';
@@ -154,15 +150,38 @@
           new Event('change', { bubbles: true })
         );
       };
+    }
+
+    function atualizar() {
+      const status = getStatus();
+
+      if (status === 'NC') {
+        criarControleVoz();
+      } else {
+        removerControleVoz();
+      }
+    }
+
+    // Estado inicial
+    atualizar();
+
+    // Atualiza quando C / N/C / N/A mudar
+    radios.forEach(function (radio) {
+      radio.addEventListener('change', atualizar);
     });
   }
 
   function iniciar() {
-    configurarVozNaObservacao();
+    document
+      .querySelectorAll('.item-row')
+      .forEach(configurarLinha);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciar);
+    document.addEventListener(
+      'DOMContentLoaded',
+      iniciar
+    );
   } else {
     iniciar();
   }
