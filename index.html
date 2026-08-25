@@ -8,9 +8,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <script>
-  alert('INDEX NOVO CARREGOU');
-</script>
+
  <center> <h1>Checklist de Vistoria</h1></center>
 
   <div class="meta" aria-label="Metadados da auditoria">
@@ -694,50 +692,88 @@
     // para você ter o arquivo pronto (já fiz em versões anteriores), eu posso injetar tudo literal.
     // Me diga: quer que eu coloque aqui a lista completa (sim/não)?
   </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
 <script>
-  const SUPABASE_URL =
-    'https://dbleblnwolbbxtscjxif.supabase.co';
+  async function testarSupabaseDireto() {
 
-  const SUPABASE_KEY =
-    'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+    alert('COMEÇANDO TESTE DO BANCO');
 
-  const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-</script>
+    try {
 
-<script>
-  async function testarSupabase() {
-    const { data, error } = await supabase
-      .from('checklist_vistorias')
-      .insert({
-        empresa: 'TESTE',
-        responsavel: 'Patricia',
-        data: '2026-08-25',
-        horario: 'Teste de conexão'
-      })
-      .select();
+      const resposta = await fetch(
+        'https://dbleblnwolbbxtscjxif.supabase.co/rest/v1/checklist_vistorias',
+        {
+          method: 'POST',
 
-    if (error) {
-      console.error(error);
-      alert('Erro: ' + error.message);
-      return;
+          headers: {
+            'apikey': 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd',
+            'Authorization':
+              'Bearer sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+
+          body: JSON.stringify({
+            empresa: 'TESTE',
+            responsavel: 'Patricia',
+            data: '2026-08-25',
+            horario: 'Teste de conexão'
+          })
+        }
+      );
+
+      const texto = await resposta.text();
+
+      if (!resposta.ok) {
+
+        console.error(
+          'Erro Supabase:',
+          resposta.status,
+          texto
+        );
+
+        alert(
+          'ERRO NO BANCO\n\n' +
+          'Status: ' +
+          resposta.status +
+          '\n\n' +
+          texto
+        );
+
+        return;
+      }
+
+      console.log(
+        'Registro salvo:',
+        texto
+      );
+
+      alert(
+        'BANCO CONECTADO E REGISTRO SALVO'
+      );
+
+    } catch (erro) {
+
+      console.error(
+        'Erro de conexão:',
+        erro
+      );
+
+      alert(
+        'ERRO DE CONEXÃO:\n\n' +
+        erro.message
+      );
     }
-
-    console.log(data);
-    alert('Supabase conectado e salvando corretamente.');
   }
 
-  testarSupabase();
+
+  testarSupabaseDireto();
 </script>
 
+
 <script src="persist.js"></script>
+
 <script src="speech.js"></script>
+
 
 </body>
 </html>
-
