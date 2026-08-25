@@ -11,13 +11,65 @@
 
  <center> <h1>Checklist de Vistoria</h1></center>
 
-  <div class="meta" aria-label="Metadados da auditoria">
-    <label>Empresa:     <input id="meta-empresa"    type="text" value="FAZENDA SANTA AMÉLIA" /></label>
-    <label>Responsável: <input id="meta-responsavel" type="text" value="Bruno Gualberto" /></label>
-    <label>Data:        <input id="meta-data"        type="date" value="2025-10-30" /></label>
-    <label>Horário:     <input id="meta-horario"     type="text" value="Início 15:00 Final 16:40" /></label>
-    <button class="btn-save" id="btn-salvar-meta">Salvar</button>
-  </div>
+<div class="meta" aria-label="Dados da auditoria">
+
+  <label>
+    Empresa:
+    <input
+      id="meta-empresa-nome"
+      type="text"
+      placeholder="Nome da empresa"
+    />
+  </label>
+
+  <input
+    id="meta-empresa-id"
+    type="hidden"
+  />
+
+  <label>
+    Responsável técnico:
+    <input
+      id="meta-responsavel-tecnico"
+      type="text"
+      placeholder="Responsável técnico"
+    />
+  </label>
+
+  <label>
+    Responsável pela auditoria:
+    <input
+      id="meta-responsavel-auditoria"
+      type="text"
+      placeholder="Responsável pela auditoria"
+    />
+  </label>
+
+  <label>
+    Data da auditoria:
+    <input
+      id="meta-data-auditoria"
+      type="date"
+    />
+  </label>
+
+  <label>
+    Horário:
+    <input
+      id="meta-horario"
+      type="text"
+      placeholder="Ex.: Início 08:00 Final 10:30"
+    />
+  </label>
+
+  <button
+    class="btn-save"
+    id="btn-salvar-meta"
+  >
+    Salvar
+  </button>
+
+</div>
 
   <div class="controls-top">
     <label class="small">Escolha o local:</label>
@@ -550,14 +602,27 @@
     const metaHorarioEl = document.getElementById('meta-horario');
     const btnSalvarMeta = document.getElementById('btn-salvar-meta');
 
-    function getMetadados(){
-      return {
-        empresa: metaEmpresaEl.value.trim(),
-        responsavel: metaRespEl.value.trim(),
-        data: metaDataEl.value,
-        horario: metaHorarioEl.value.trim()
-      };
-    }
+   function getMetadados() {
+  return {
+    empresa_id:
+      document.getElementById('meta-empresa-id').value || null,
+
+    empresa_nome:
+      document.getElementById('meta-empresa-nome').value.trim(),
+
+    responsavel_tecnico:
+      document.getElementById('meta-responsavel-tecnico').value.trim(),
+
+    responsavel_auditoria:
+      document.getElementById('meta-responsavel-auditoria').value.trim(),
+
+    data_auditoria:
+      document.getElementById('meta-data-auditoria').value,
+
+    horario:
+      document.getElementById('meta-horario').value.trim()
+  };
+}
 
     btnSalvarMeta.addEventListener('click', ()=>{
       const m = getMetadados();
