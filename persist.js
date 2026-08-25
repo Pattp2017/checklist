@@ -503,4 +503,30 @@
     restoreResponses
   };
 
+  // =======================================================
+  // HORA AUTOMÁTICA
+  // =======================================================
+function preencherHorarioAutomatico() {
+  const campo = document.getElementById('meta-horario');
+
+  if (!campo) return;
+
+  if (!campo.value) {
+    const agora = new Date();
+
+    const hora = String(
+      agora.getHours()
+    ).padStart(2, '0');
+
+    const minuto = String(
+      agora.getMinutes()
+    ).padStart(2, '0');
+
+    campo.value =
+      `Início ${hora}:${minuto}`;
+  }
+}
+
+preencherHorarioAutomatico();
 })();
+
