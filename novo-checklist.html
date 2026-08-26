@@ -205,6 +205,40 @@
     }
 
 
+    .btn-iniciar:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+
+    /* =========================================
+       MENSAGEM
+    ========================================= */
+
+    .mensagem {
+      display: none;
+
+      margin-top: 14px;
+
+      padding: 10px 12px;
+
+      border-radius: 7px;
+
+      font-size: 14px;
+    }
+
+
+    .mensagem.erro {
+      display: block;
+
+      background: #fff1f1;
+      color: #b42318;
+
+      border:
+        1px solid #f4b4b4;
+    }
+
+
     /* =========================================
        MOBILE
     ========================================= */
@@ -280,7 +314,7 @@
         <select id="empresa">
 
           <option value="">
-            Selecione...
+            Carregando...
           </option>
 
         </select>
@@ -360,7 +394,7 @@
 
 
 
-      <!-- INICIAR -->
+      <!-- BOTÃO -->
 
       <div class="acoes">
 
@@ -375,6 +409,12 @@
       </div>
 
 
+      <div
+        id="mensagem"
+        class="mensagem"
+      ></div>
+
+
     </section>
 
   </main>
@@ -384,16 +424,71 @@
   <script>
 
     // =========================================
+    // SUPABASE DE EMPRESAS
+    // =========================================
+
+    const EMPRESAS_SUPABASE_URL =
+      'https://uofnninqxnsvaemxpwhh.supabase.co';
+
+    const EMPRESAS_SUPABASE_KEY =
+      'sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8';
+
+
+    // =========================================
+    // ELEMENTOS
+    // =========================================
+
+    const empresaSelect =
+      document.getElementById(
+        'empresa'
+      );
+
+    const responsavelTecnicoEl =
+      document.getElementById(
+        'responsavel-tecnico'
+      );
+
+    const responsavelAuditoriaEl =
+      document.getElementById(
+        'responsavel-auditoria'
+      );
+
+    const dataAuditoriaEl =
+      document.getElementById(
+        'data-auditoria'
+      );
+
+    const horarioEl =
+      document.getElementById(
+        'horario'
+      );
+
+    const btnIniciar =
+      document.getElementById(
+        'btn-iniciar'
+      );
+
+    const mensagemEl =
+      document.getElementById(
+        'mensagem'
+      );
+
+
+    // =========================================
     // VOLTAR
     // =========================================
 
     document
-      .getElementById('btn-voltar')
+      .getElementById(
+        'btn-voltar'
+      )
       .addEventListener(
         'click',
         () => {
+
           window.location.href =
             'home.html';
+
         }
       );
 
@@ -402,35 +497,43 @@
     // DATA ATUAL
     // =========================================
 
-    const hoje =
-      new Date();
+    function preencherDataAtual() {
 
-    const ano =
-      hoje.getFullYear();
+      const hoje =
+        new Date();
 
-    const mes =
-      String(
-        hoje.getMonth() + 1
-      ).padStart(2, '0');
+      const ano =
+        hoje.getFullYear();
 
-    const dia =
-      String(
-        hoje.getDate()
-      ).padStart(2, '0');
+      const mes =
+        String(
+          hoje.getMonth() + 1
+        ).padStart(
+          2,
+          '0'
+        );
 
-    document
-      .getElementById(
-        'data-auditoria'
-      )
-      .value =
+      const dia =
+        String(
+          hoje.getDate()
+        ).padStart(
+          2,
+          '0'
+        );
+
+      dataAuditoriaEl.value =
         `${ano}-${mes}-${dia}`;
+    }
+
+
+    preencherDataAtual();
 
 
     // =========================================
     // HORÁRIO AUTOMÁTICO
     // =========================================
 
-    function atualizarHorario() {
+    function preencherHorario() {
 
       const agora =
         new Date();
@@ -438,42 +541,309 @@
       const horas =
         String(
           agora.getHours()
-        ).padStart(2, '0');
+        ).padStart(
+          2,
+          '0'
+        );
 
       const minutos =
         String(
           agora.getMinutes()
-        ).padStart(2, '0');
+        ).padStart(
+          2,
+          '0'
+        );
 
-      document
-        .getElementById(
-          'horario'
-        )
-        .value =
-          `${horas}:${minutos}`;
+      horarioEl.value =
+        `${horas}:${minutos}`;
     }
 
 
-    atualizarHorario();
+    preencherHorario();
 
 
     // =========================================
-    // BOTÃO INICIAR
+    // MENSAGEM DE ERRO
     // =========================================
 
-    document
-      .getElementById(
-        'btn-iniciar'
-      )
+    function mostrarErro(
+      texto
+    ) {
+
+      mensagemEl.className =
+        'mensagem erro';
+
+      mensagemEl.textContent =
+        texto;
+    }
+
+
+    function limparMensagem() {
+
+      mensagemEl.className =
+        'mensagem';
+
+      mensagemEl.textContent =
+        '';
+    }
+
+
+    // =========================================
+    // CARREGAR EMPRESAS
+    // =========================================
+
+    async function carregarEmpresas() {
+
+      limparMensagem();
+
+      empresaSelect.disabled =
+        true;
+
+      empresaSelect.innerHTML =
+        '<option value="">Carregando...</option>';
+
+
+      try {
+
+        const url =
+          `${EMPRESAS_SUPABASE_URL}` +
+          `/rest/v1/epi_empresas` +
+          `?select=id,nome` +
+          `&ativo=eq.true` +
+          `&order=nome.asc`;
+
+
+        const resposta =
+          await fetch(
+            url,
+            {
+              method: 'GET',
+
+              headers: {
+
+                apikey:
+                  EMPRESAS_SUPABASE_KEY,
+
+                Authorization:
+                  'Bearer ' +
+                  EMPRESAS_SUPABASE_KEY,
+
+                Accept:
+                  'application/json'
+
+              }
+            }
+          );
+
+
+        const texto =
+          await resposta.text();
+
+
+        if (
+          !resposta.ok
+        ) {
+
+          throw new Error(
+            texto ||
+            'Erro ao consultar empresas.'
+          );
+        }
+
+
+        const empresas =
+          texto
+            ? JSON.parse(texto)
+            : [];
+
+
+        empresaSelect.innerHTML =
+          '<option value="">Selecione...</option>';
+
+
+        empresas.forEach(
+          empresa => {
+
+            const option =
+              document.createElement(
+                'option'
+              );
+
+            option.value =
+              empresa.id;
+
+            option.textContent =
+              empresa.nome;
+
+            option.dataset.nome =
+              empresa.nome;
+
+            empresaSelect
+              .appendChild(
+                option
+              );
+          }
+        );
+
+
+        console.log(
+          `${empresas.length} empresa(s) carregada(s).`
+        );
+
+
+        if (
+          empresas.length === 0
+        ) {
+
+          mostrarErro(
+            'Nenhuma empresa ativa encontrada.'
+          );
+        }
+
+
+      } catch (erro) {
+
+        console.error(
+          'Erro ao carregar empresas:',
+          erro
+        );
+
+
+        empresaSelect.innerHTML =
+          '<option value="">Erro ao carregar empresas</option>';
+
+
+        mostrarErro(
+          'Não foi possível carregar as empresas.'
+        );
+
+      } finally {
+
+        empresaSelect.disabled =
+          false;
+      }
+    }
+
+
+    carregarEmpresas();
+
+
+    // =========================================
+    // INICIAR CHECKLIST
+    // =========================================
+
+    btnIniciar
       .addEventListener(
         'click',
         () => {
 
-          // conexão com Supabase
-          // será feita na próxima etapa
+          limparMensagem();
+
+
+          const empresaId =
+            empresaSelect.value;
+
+
+          const empresaNome =
+            empresaSelect
+              .selectedOptions[0]
+              ?.dataset.nome || '';
+
+
+          const responsavelTecnico =
+            responsavelTecnicoEl
+              .value
+              .trim();
+
+
+          const responsavelAuditoria =
+            responsavelAuditoriaEl
+              .value
+              .trim();
+
+
+          const dataAuditoria =
+            dataAuditoriaEl.value;
+
+
+          const horario =
+            horarioEl.value;
+
+
+          // =====================================
+          // VALIDAÇÕES
+          // =====================================
+
+          if (!empresaId) {
+
+            alert(
+              'Selecione a empresa/fazenda.'
+            );
+
+            empresaSelect.focus();
+
+            return;
+          }
+
+
+          if (!responsavelAuditoria) {
+
+            alert(
+              'Informe o responsável pela auditoria.'
+            );
+
+            responsavelAuditoriaEl
+              .focus();
+
+            return;
+          }
+
+
+          if (!dataAuditoria) {
+
+            alert(
+              'Informe a data da auditoria.'
+            );
+
+            dataAuditoriaEl.focus();
+
+            return;
+          }
+
+
+          // =====================================
+          // TESTE DOS DADOS
+          // =====================================
+
+          console.log(
+            'Nova vistoria:',
+            {
+              empresa_id:
+                empresaId,
+
+              empresa_nome:
+                empresaNome,
+
+              responsavel_tecnico:
+                responsavelTecnico,
+
+              responsavel_auditoria:
+                responsavelAuditoria,
+
+              data_auditoria:
+                dataAuditoria,
+
+              horario:
+                horario,
+
+              status:
+                'EM_ANDAMENTO'
+            }
+          );
+
 
           alert(
-            'Tela aprovada. Próxima etapa: criar a vistoria.'
+            'Dados do novo checklist preparados com sucesso.'
           );
 
         }
