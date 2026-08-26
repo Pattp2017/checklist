@@ -1,105 +1,70 @@
 // =========================================================
 // photo.js
-// Captura de fotos dos itens do checklist
+// Foto somente para itens N/C
 // =========================================================
 
 (function () {
 
   const fotosPendentes = new Map();
 
-  // -------------------------------------------------------
-  // Criar input de câmera
-  // -------------------------------------------------------
-
-  function abrirCamera(row, checkbox) {
-
-    const input = document.createElement('input');
-
-    input.type = 'file';
-    input.accept = 'image/*';
-
-    // No celular tenta abrir câmera traseira
-    input.capture = 'environment';
-
-    input.style.display = 'none';
-
-    document.body.appendChild(input);
-
-
-    input.addEventListener('change', () => {
-
-      const arquivo =
-        input.files &&
-        input.files[0];
-
-
-      if (!arquivo) {
-
-        checkbox.checked = false;
-
-        input.remove();
-
-        return;
-      }
-
-
-      registrarFoto(
-        row,
-        arquivo
-      );
-
-
-      input.remove();
-    });
-
-
-    input.click();
-  }
-
-
-  // -------------------------------------------------------
-  // Identificação única do item
-  // -------------------------------------------------------
 
   function getChaveItem(row) {
-
-    const setor =
-      row.dataset.setor || '';
-
-    const item =
-      row.dataset.item || '';
+    const setor = row.dataset.setor || '';
+    const item = row.dataset.item || '';
 
     return setor + '||' + item;
   }
 
 
-  // -------------------------------------------------------
-  // Registrar foto temporariamente
-  // -------------------------------------------------------
+  function getStatus(row) {
+    const radio = row.querySelector(
+      'input[type="radio"]:checked'
+    );
 
-  function registrarFoto(
-    row,
-    arquivo
-  ) {
+    return radio ? radio.value : '';
+  }
 
-    const chave =
-      getChaveItem(row);
 
+  function removerFoto(row) {
+    const chave = getChaveItem(row);
+
+    fotosPendentes.delete(chave);
+
+    delete row.dataset.temFoto;
+
+    const botao = row.querySelector(
+      '.btn-foto'
+    );
+
+    if (botao) {
+      botao.textContent = '📷 Foto';
+      botao.classList.remove('foto-ok');
+    }
+  }
+
+
+  function registrarFoto(row, arquivo) {
+    const chave = getChaveItem(row);
 
     fotosPendentes.set(
       chave,
       arquivo
     );
 
+    row.dataset.temFoto = 'true';
 
-    row.dataset.temFoto =
-      'true';
-
-
-    mostrarIndicadorFoto(
-      row
+    const botao = row.querySelector(
+      '.btn-foto'
     );
 
+    if (botao) {
+      botao.textContent =
+        '📷 Foto anexada ✓';
+
+      botao.classList.add(
+        'foto-ok'
+      );
+    }
 
     console.log(
       'Foto selecionada:',
@@ -110,112 +75,174 @@
   }
 
 
-  // -------------------------------------------------------
-  // Indicador visual
-  // -------------------------------------------------------
+  function abrirCamera(row) {
 
-  function mostrarIndicadorFoto(
-    row
-  ) {
+    const input =
+      document.createElement('input');
 
-    let indicador =
-      row.querySelector(
-        '.foto-indicador'
-      );
+    input.type = 'file';
 
+    input.accept = 'image/*';
 
-    if (!indicador) {
+    input.capture = 'environment';
 
-      indicador =
-        document.createElement(
-          'div'
-        );
+    input.style.display = 'none';
+
+    document.body.appendChild(input);
 
 
-      indicador.className =
-        'foto-indicador';
+    input.addEventListener(
+      'change',
+      function () {
 
+        const arquivo =
+          input.files &&
+          input.files[0];
 
-      const obs =
-        row.querySelector(
-          '.obs'
-        );
+        if (arquivo) {
+          registrarFoto(
+            row,
+            arquivo
+          );
+        }
 
-
-      if (obs) {
-
-        obs.insertAdjacentElement(
-          'afterend',
-          indicador
-        );
-
-      } else {
-
-        row.appendChild(
-          indicador
-        );
+        input.remove();
       }
-    }
-
-
-    indicador.textContent =
-      '📷 Foto selecionada';
-  }
-
-
-  // -------------------------------------------------------
-  // Remover foto
-  // -------------------------------------------------------
-
-  function removerFoto(row) {
-
-    const chave =
-      getChaveItem(row);
-
-
-    fotosPendentes.delete(
-      chave
     );
 
 
-    delete row.dataset.temFoto;
+    input.click();
+  }
 
 
-    const indicador =
+  function criarBotaoFoto(row) {
+
+    if (
+      row.querySelector('.btn-foto')
+    ) {
+      return;
+    }
+
+
+    const botao =
+      document.createElement('button');
+
+    botao.type = 'button';
+
+    botao.className =
+      'btn-foto';
+
+    botao.textContent =
+      row.dataset.temFoto === 'true'
+        ? '📷 Foto anexada ✓'
+        : '📷 Foto';
+
+
+    botao.addEventListener(
+      'click',
+      function () {
+
+        abrirCamera(row);
+
+      }
+    );
+
+
+    // Tenta colocar junto do botão Ditar
+    const speechControls =
       row.querySelector(
-        '.foto-indicador'
+        '.speech-controls'
       );
 
 
-    if (indicador) {
-      indicador.remove();
+    if (speechControls) {
+
+      speechControls.appendChild(
+        botao
+      );
+
+      return;
+    }
+
+
+    // Caso o speech ainda não tenha criado
+    // os controles, coloca após observação.
+    const obs =
+      row.querySelector(
+        'textarea.obs'
+      );
+
+
+    if (obs) {
+
+      obs.insertAdjacentElement(
+        'afterend',
+        botao
+      );
+
+    } else {
+
+      row.appendChild(
+        botao
+      );
     }
   }
 
 
-  // -------------------------------------------------------
-  // Clique no checkbox "Arquivar foto"
-  // -------------------------------------------------------
+  function removerBotaoFoto(row) {
+
+    const botao =
+      row.querySelector(
+        '.btn-foto'
+      );
+
+    if (botao) {
+      botao.remove();
+    }
+  }
+
+
+  function atualizarFoto(row) {
+
+    const status =
+      getStatus(row);
+
+
+    if (status === 'NC') {
+
+      criarBotaoFoto(row);
+
+    } else {
+
+      removerFoto(row);
+
+      removerBotaoFoto(row);
+    }
+  }
+
+
+  // =======================================================
+  // ALTERAÇÃO C / NC / NA
+  // =======================================================
 
   document.addEventListener(
     'change',
     function (event) {
 
-      const checkbox =
+      const target =
         event.target;
 
 
       if (
-        !checkbox ||
-        checkbox.type !==
-          'checkbox'
+        !target ||
+        target.type !== 'radio'
       ) {
         return;
       }
 
 
       const row =
-        checkbox.closest(
+        target.closest(
           '.item-row'
         );
 
@@ -225,26 +252,80 @@
       }
 
 
-      if (checkbox.checked) {
-
-        abrirCamera(
-          row,
-          checkbox
-        );
-
-      } else {
-
-        removerFoto(
-          row
-        );
-      }
+      atualizarFoto(row);
     }
   );
 
 
-  // -------------------------------------------------------
-  // API GLOBAL
-  // -------------------------------------------------------
+  // =======================================================
+  // ITENS CRIADOS DINAMICAMENTE
+  // =======================================================
+
+  const observer =
+    new MutationObserver(
+      function () {
+
+        document
+          .querySelectorAll(
+            '.item-row'
+          )
+          .forEach(
+            atualizarFoto
+          );
+
+      }
+    );
+
+
+  function iniciar() {
+
+    const checklist =
+      document.getElementById(
+        'checklist'
+      );
+
+
+    if (checklist) {
+
+      observer.observe(
+        checklist,
+        {
+          childList: true,
+          subtree: true
+        }
+      );
+    }
+
+
+    document
+      .querySelectorAll(
+        '.item-row'
+      )
+      .forEach(
+        atualizarFoto
+      );
+  }
+
+
+  if (
+    document.readyState ===
+    'loading'
+  ) {
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      iniciar
+    );
+
+  } else {
+
+    iniciar();
+  }
+
+
+  // =======================================================
+  // API
+  // =======================================================
 
   window.VistoriaFotos = {
 
@@ -283,16 +364,18 @@
 
     removerFoto,
 
+
     limpar() {
 
       fotosPendentes.clear();
 
       document
         .querySelectorAll(
-          '.foto-indicador'
+          '.btn-foto'
         )
         .forEach(
-          el => el.remove()
+          botao =>
+            botao.remove()
         );
     }
   };
