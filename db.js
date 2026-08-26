@@ -504,7 +504,73 @@ async function uploadFoto(
     return itens;
   }
 
+function validarItensNC() {
 
+  if (
+    !window.VistoriaPersist ||
+    typeof window.VistoriaPersist.collectResponses !== 'function'
+  ) {
+    return true;
+  }
+
+  const respostas =
+    window.VistoriaPersist.collectResponses();
+
+  const pendentes =
+    respostas.filter(item =>
+      item.status === 'NC' &&
+      (
+        !item.obs ||
+        item.obs.trim().length < 3
+      )
+    );
+
+  if (!pendentes.length) {
+    return true;
+  }
+
+  const primeiro =
+    pendentes[0];
+
+  const row =
+    Array.from(
+      document.querySelectorAll('.item-row')
+    ).find(r =>
+      r.dataset.setor === primeiro.setor &&
+      r.dataset.item === primeiro.item
+    );
+
+  if (row) {
+
+    const textarea =
+      row.querySelector('textarea.obs');
+
+    if (textarea) {
+
+      textarea.style.display = 'block';
+
+      textarea.classList.add(
+        'obs-required'
+      );
+
+      textarea.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+
+      setTimeout(() => {
+        textarea.focus();
+      }, 400);
+    }
+  }
+
+  alert(
+    `Existem ${pendentes.length} item(ns) N/C sem observação.\n\n` +
+    'Preencha a observação antes de salvar.'
+  );
+
+  return false;
+}
   // =======================================================
   // SALVAR TUDO
   // =======================================================
