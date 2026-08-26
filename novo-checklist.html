@@ -972,132 +972,225 @@
     // =========================================
 
     carregarEmpresas();
-
-
     // =========================================
     // INICIAR CHECKLIST
     // =========================================
 
-    btnIniciar
-      .addEventListener(
-        'click',
-        () => {
+    btnIniciar.addEventListener(
+      'click',
+      async () => {
 
-          limparMensagem();
+        limparMensagem();
 
+        const empresaId =
+          empresaIdEl.value;
 
-          const empresaId =
-            empresaIdEl.value;
+        const empresaNome =
+          empresaBusca
+            .value
+            .trim();
 
+        const responsavelTecnico =
+          responsavelTecnicoEl
+            .value
+            .trim();
 
-          const empresaNome =
-            empresaBusca
-              .value
-              .trim();
+        const responsavelAuditoria =
+          responsavelAuditoriaEl
+            .value
+            .trim();
 
+        const dataAuditoria =
+          dataAuditoriaEl.value;
 
-          const responsavelTecnico =
-            responsavelTecnicoEl
-              .value
-              .trim();
-
-
-          const responsavelAuditoria =
-            responsavelAuditoriaEl
-              .value
-              .trim();
-
-
-          const dataAuditoria =
-            dataAuditoriaEl.value;
+        const horario =
+          horarioEl.value;
 
 
-          const horario =
-            horarioEl.value;
+        if (!empresaId) {
+
+          alert(
+            'Selecione uma empresa válida da lista.'
+          );
+
+          empresaBusca.focus();
+
+          return;
+        }
 
 
-          // =====================================
-          // VALIDAÇÕES
-          // =====================================
+        if (!responsavelAuditoria) {
 
-          if (!empresaId) {
+          alert(
+            'Informe o responsável pela auditoria.'
+          );
 
-            alert(
-              'Selecione uma empresa válida da lista.'
+          responsavelAuditoriaEl.focus();
+
+          return;
+        }
+
+
+        if (!dataAuditoria) {
+
+          alert(
+            'Informe a data da auditoria.'
+          );
+
+          dataAuditoriaEl.focus();
+
+          return;
+        }
+
+
+        btnIniciar.disabled = true;
+
+        btnIniciar.textContent =
+          'Iniciando...';
+
+
+        try {
+
+          const CHECKLIST_SUPABASE_URL =
+            'https://dbleblnwolbbxtscjxif.supabase.co';
+
+          const CHECKLIST_SUPABASE_KEY =
+            'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+
+
+          const dados = {
+
+            empresa_id:
+              empresaId,
+
+            empresa_nome:
+              empresaNome,
+
+            responsavel_tecnico:
+              responsavelTecnico || null,
+
+            responsavel_auditoria:
+              responsavelAuditoria,
+
+            data_auditoria:
+              dataAuditoria,
+
+            horario:
+              horario,
+
+            status:
+              'EM_ANDAMENTO'
+          };
+
+
+          const resposta =
+            await fetch(
+              `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_vistorias`,
+              {
+                method: 'POST',
+
+                headers: {
+
+                  apikey:
+                    CHECKLIST_SUPABASE_KEY,
+
+                  Authorization:
+                    'Bearer ' +
+                    CHECKLIST_SUPABASE_KEY,
+
+                  'Content-Type':
+                    'application/json',
+
+                  Prefer:
+                    'return=representation'
+                },
+
+                body:
+                  JSON.stringify(
+                    dados
+                  )
+              }
             );
 
-            empresaBusca.focus();
 
-            return;
+          const texto =
+            await resposta.text();
+
+
+          if (!resposta.ok) {
+
+            throw new Error(
+              texto ||
+              'Erro ao criar checklist.'
+            );
           }
 
 
-          if (!responsavelAuditoria) {
+          const registros =
+            JSON.parse(texto);
 
-            alert(
-              'Informe o responsável pela auditoria.'
+
+          if (
+            !registros ||
+            !registros.length ||
+            !registros[0].id
+          ) {
+
+            throw new Error(
+              'O banco não retornou o ID da vistoria.'
             );
-
-            responsavelAuditoriaEl
-              .focus();
-
-            return;
           }
 
 
-          if (!dataAuditoria) {
-
-            alert(
-              'Informe a data da auditoria.'
-            );
-
-            dataAuditoriaEl.focus();
-
-            return;
-          }
+          const vistoria =
+            registros[0];
 
 
-          // =====================================
-          // TESTE DOS DADOS
-          // =====================================
+          localStorage.setItem(
+            'checklist_vistoria_id',
+            vistoria.id
+          );
 
-          console.log(
-            'Nova vistoria:',
-            {
 
-              empresa_id:
-                empresaId,
+          localStorage.setItem(
+            'checklist_nova_vistoria',
+            'true'
+          );
 
-              empresa_nome:
-                empresaNome,
 
-              responsavel_tecnico:
-                responsavelTecnico,
+          window.location.href =
+            `index.html?vistoria_id=${encodeURIComponent(vistoria.id)}`;
 
-              responsavel_auditoria:
-                responsavelAuditoria,
 
-              data_auditoria:
-                dataAuditoria,
+        } catch (erro) {
 
-              horario:
-                horario,
-
-              status:
-                'EM_ANDAMENTO'
-            }
+          console.error(
+            'Erro ao iniciar checklist:',
+            erro
           );
 
 
           alert(
-            'Dados do novo checklist preparados com sucesso.'
+            'Não foi possível iniciar o checklist.\n\n' +
+            (
+              erro?.message ||
+              String(erro)
+            )
           );
 
+
+        } finally {
+
+          btnIniciar.disabled =
+            false;
+
+          btnIniciar.textContent =
+            'Iniciar Checklist';
         }
-      );
+      }
+    );
 
   </script>
-
 
 </body>
 
