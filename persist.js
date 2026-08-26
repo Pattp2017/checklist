@@ -583,7 +583,47 @@ async function carregarDadosVistoria() {
   // INICIALIZAÇÃO
   // =======================================================
 
-  function init() {
+  async function init() {
+
+  const novaVistoria =
+    localStorage.getItem(
+      'checklist_nova_vistoria'
+    ) === 'true';
+
+
+  // =========================================
+  // NOVA VISTORIA
+  // =========================================
+
+  if (novaVistoria) {
+
+    // remove dados da vistoria anterior
+    localStorage.removeItem(
+      STORAGE_KEY
+    );
+
+
+    // carrega os dados reais
+    // da vistoria recém-criada no Supabase
+    await carregarDadosVistoria();
+
+
+    // marca como já carregada
+    localStorage.removeItem(
+      'checklist_nova_vistoria'
+    );
+
+
+    console.log(
+      'Nova vistoria carregada do Supabase.'
+    );
+
+
+  } else {
+
+    // =======================================
+    // VISTORIA JÁ EXISTENTE / RECUPERAÇÃO
+    // =======================================
 
     const stored =
       loadAll();
@@ -610,11 +650,18 @@ async function carregarDadosVistoria() {
       console.log(
         'Dados restaurados do localStorage.'
       );
+
+    } else {
+
+      // sem dados locais:
+      // tenta carregar pelo vistoria_id
+      await carregarDadosVistoria();
     }
-
-
-    attachAutoSave();
   }
+
+
+  attachAutoSave();
+}
 
 
   if (
