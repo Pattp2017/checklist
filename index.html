@@ -464,14 +464,21 @@
       existing.forEach(o=> o.remove());
 
       const setores = getUniqueSetores(initialData);
-      setores.forEach(s=>{
+      
+      setores.sort((a, b) =>
+        a.localeCompare(
+          b,
+          'pt-BR',
+          { sensitivity: 'base' }
+        )
+      );
+      
+      setores.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s;
         opt.textContent = s;
         selectLocal.appendChild(opt);
       });
-    }
-    populateLocalMenu();
 
     // ----- GERAR OS SETORES/ITENS, mas inicialmente escondidos -----
     const checklistEl = document.getElementById('checklist');
