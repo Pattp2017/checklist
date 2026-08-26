@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Novo Checklist</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+
+    /* =========================================
+       CABEÇALHO
+    ========================================= */
+
+    .topo {
+      background: #ffffff;
+
+      border-bottom:
+        1px solid #d9dee5;
+
+      padding:
+        18px 20px;
+
+      display: flex;
+      align-items: center;
+
+      position: relative;
+    }
+
+
+    .voltar {
+      position: absolute;
+      left: 18px;
+
+      border: 0;
+      background: transparent;
+
+      font-size: 24px;
+      color: #163a5f;
+
+      cursor: pointer;
+
+      padding: 5px;
+    }
+
+
+    .topo h1 {
+      width: 100%;
+
+      margin: 0;
+
+      text-align: center;
+
+      font-size: 22px;
+      color: #163a5f;
+    }
+
+
+    /* =========================================
+       CONTAINER
+    ========================================= */
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+
+      margin: 0 auto;
+
+      padding:
+        28px 18px;
+    }
+
+
+    /* =========================================
+       CARD
+    ========================================= */
+
+    .card {
+      background: #ffffff;
+
+      border:
+        1px solid #d9dee5;
+
+      border-radius: 12px;
+
+      padding: 22px;
+    }
+
+
+    /* =========================================
+       CAMPOS
+    ========================================= */
+
+    .campo {
+      margin-bottom: 18px;
+    }
+
+
+    .campo:last-of-type {
+      margin-bottom: 0;
+    }
+
+
+    label {
+      display: block;
+
+      margin-bottom: 6px;
+
+      font-size: 14px;
+      font-weight: 600;
+
+      color: #374151;
+    }
+
+
+    input,
+    select {
+      width: 100%;
+      height: 44px;
+
+      padding:
+        0 12px;
+
+      border:
+        1px solid #cbd2d9;
+
+      border-radius: 7px;
+
+      background: #ffffff;
+
+      color: #1f2937;
+
+      font-family: inherit;
+      font-size: 15px;
+
+      outline: none;
+    }
+
+
+    input:focus,
+    select:focus {
+      border-color: #0b6aa6;
+    }
+
+
+    input[readonly] {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+
+    /* =========================================
+       BOTÃO
+    ========================================= */
+
+    .acoes {
+      margin-top: 24px;
+    }
+
+
+    .btn-iniciar {
+      width: 100%;
+      height: 46px;
+
+      border: 0;
+      border-radius: 7px;
+
+      background: #163a5f;
+      color: #ffffff;
+
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+
+      cursor: pointer;
+    }
+
+
+    .btn-iniciar:active {
+      transform: scale(.99);
+    }
+
+
+    /* =========================================
+       MOBILE
+    ========================================= */
+
+    @media (max-width: 480px) {
+
+      .container {
+        padding:
+          20px 14px;
+      }
+
+
+      .card {
+        padding:
+          18px 15px;
+      }
+
+
+      .topo h1 {
+        font-size: 20px;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+  <!-- ========================================
+       CABEÇALHO
+  ========================================= -->
+
+  <header class="topo">
+
+    <button
+      type="button"
+      class="voltar"
+      id="btn-voltar"
+      aria-label="Voltar"
+    >
+      ‹
+    </button>
+
+    <h1>
+      Novo Checklist
+    </h1>
+
+  </header>
+
+
+
+  <!-- ========================================
+       CONTEÚDO
+  ========================================= -->
+
+  <main class="container">
+
+    <section class="card">
+
+
+      <!-- EMPRESA -->
+
+      <div class="campo">
+
+        <label for="empresa">
+          Empresa / Fazenda
+        </label>
+
+        <select id="empresa">
+
+          <option value="">
+            Selecione...
+          </option>
+
+        </select>
+
+      </div>
+
+
+
+      <!-- RESPONSÁVEL TÉCNICO -->
+
+      <div class="campo">
+
+        <label for="responsavel-tecnico">
+          Responsável técnico
+        </label>
+
+        <input
+          type="text"
+          id="responsavel-tecnico"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+
+      <!-- RESPONSÁVEL AUDITORIA -->
+
+      <div class="campo">
+
+        <label for="responsavel-auditoria">
+          Responsável pela auditoria
+        </label>
+
+        <input
+          type="text"
+          id="responsavel-auditoria"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+
+      <!-- DATA -->
+
+      <div class="campo">
+
+        <label for="data-auditoria">
+          Data da auditoria
+        </label>
+
+        <input
+          type="date"
+          id="data-auditoria"
+        >
+
+      </div>
+
+
+
+      <!-- HORÁRIO -->
+
+      <div class="campo">
+
+        <label for="horario">
+          Horário
+        </label>
+
+        <input
+          type="text"
+          id="horario"
+          readonly
+        >
+
+      </div>
+
+
+
+      <!-- INICIAR -->
+
+      <div class="acoes">
+
+        <button
+          type="button"
+          class="btn-iniciar"
+          id="btn-iniciar"
+        >
+          Iniciar Checklist
+        </button>
+
+      </div>
+
+
+    </section>
+
+  </main>
+
+
+
+  <script>
+
+    // =========================================
+    // VOLTAR
+    // =========================================
+
+    document
+      .getElementById('btn-voltar')
+      .addEventListener(
+        'click',
+        () => {
+          window.location.href =
+            'home.html';
+        }
+      );
+
+
+    // =========================================
+    // DATA ATUAL
+    // =========================================
+
+    const hoje =
+      new Date();
+
+    const ano =
+      hoje.getFullYear();
+
+    const mes =
+      String(
+        hoje.getMonth() + 1
+      ).padStart(2, '0');
+
+    const dia =
+      String(
+        hoje.getDate()
+      ).padStart(2, '0');
+
+    document
+      .getElementById(
+        'data-auditoria'
+      )
+      .value =
+        `${ano}-${mes}-${dia}`;
+
+
+    // =========================================
+    // HORÁRIO AUTOMÁTICO
+    // =========================================
+
+    function atualizarHorario() {
+
+      const agora =
+        new Date();
+
+      const horas =
+        String(
+          agora.getHours()
+        ).padStart(2, '0');
+
+      const minutos =
+        String(
+          agora.getMinutes()
+        ).padStart(2, '0');
+
+      document
+        .getElementById(
+          'horario'
+        )
+        .value =
+          `${horas}:${minutos}`;
+    }
+
+
+    atualizarHorario();
+
+
+    // =========================================
+    // BOTÃO INICIAR
+    // =========================================
+
+    document
+      .getElementById(
+        'btn-iniciar'
+      )
+      .addEventListener(
+        'click',
+        () => {
+
+          // conexão com Supabase
+          // será feita na próxima etapa
+
+          alert(
+            'Tela aprovada. Próxima etapa: criar a vistoria.'
+          );
+
+        }
+      );
+
+  </script>
+
+
+</body>
+
+</html>
