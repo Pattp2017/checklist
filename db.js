@@ -476,100 +476,88 @@ async function uploadFoto(
   // SALVAR ITENS DA VISTORIA
   // =======================================================
 
-  async function salvarItens(
-    vistoriaId
-  ) {
+async function salvarItens(
+  vistoriaId
+) {
 
-    const itens =
-      getItensChecklist(
-        vistoriaId
-      );
-
-
-    await apagarItens(
+  const itens =
+    getItensChecklist(
       vistoriaId
     );
 
 
-    await inserirItens(
-      itens
-    );
+  // =====================================================
+  // ENVIAR FOTOS PENDENTES
+  // =====================================================
+
+  for (const item of itens) {
+
+    if (
+      !window.VistoriaFotos ||
+      typeof window.VistoriaFotos
+        .getFotoPorDados !== 'function'
+    ) {
+      continue;
+    }
+
+
+    const arquivo =
+      window.VistoriaFotos
+        .getFotoPorDados(
+          item.setor,
+          item.item
+        );
+
+
+    if (!arquivo) {
+      continue;
+    }
 
 
     console.log(
-      `${itens.length} item(ns) salvo(s).`
+      'Enviando foto:',
+      item.setor,
+      item.item
     );
 
 
-    return itens;
-  }
-
-function validarItensNC() {
-
-  if (
-    !window.VistoriaPersist ||
-    typeof window.VistoriaPersist.collectResponses !== 'function'
-  ) {
-    return true;
-  }
-
-  const respostas =
-    window.VistoriaPersist.collectResponses();
-
-  const pendentes =
-    respostas.filter(item =>
-      item.status === 'NC' &&
-      (
-        !item.obs ||
-        item.obs.trim().length < 3
-      )
-    );
-
-  if (!pendentes.length) {
-    return true;
-  }
-
-  const primeiro =
-    pendentes[0];
-
-  const row =
-    Array.from(
-      document.querySelectorAll('.item-row')
-    ).find(r =>
-      r.dataset.setor === primeiro.setor &&
-      r.dataset.item === primeiro.item
-    );
-
-  if (row) {
-
-    const textarea =
-      row.querySelector('textarea.obs');
-
-    if (textarea) {
-
-      textarea.style.display = 'block';
-
-      textarea.classList.add(
-        'obs-required'
+    const caminho =
+      await uploadFoto(
+        vistoriaId,
+        item.setor,
+        item.item,
+        arquivo
       );
 
-      textarea.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
 
-      setTimeout(() => {
-        textarea.focus();
-      }, 400);
-    }
+    item.foto_path =
+      caminho;
+
+    item.arquivar_foto =
+      true;
   }
 
-  alert(
-    `Existem ${pendentes.length} item(ns) N/C sem observação.\n\n` +
-    'Preencha a observação antes de salvar.'
+
+  // =====================================================
+  // SUBSTITUIR ITENS DA VISTORIA
+  // =====================================================
+
+  await apagarItens(
+    vistoriaId
   );
 
-  return false;
+
+  await inserirItens(
+    itens
+  );
+
+
+  console.log(
+    `${itens.length} item(ns) salvo(s).`
+  );
+
+
+  return itens;
 }
   // =======================================================
   // SALVAR TUDO
