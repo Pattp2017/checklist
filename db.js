@@ -565,8 +565,7 @@ async function salvarItens(
 
  async function salvarVistoria() {
 
-  alert('1 - entrou no salvarVistoria');
-
+   alert('ENTROU NO DB-V8');
 
   const botao =
     document.getElementById(
