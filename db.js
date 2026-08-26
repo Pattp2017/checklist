@@ -563,117 +563,213 @@ async function salvarItens(
   // SALVAR TUDO
   // =======================================================
 
-  async function salvarVistoria() {
+ async function salvarVistoria() {
 
-    const botao =
-      document.getElementById(
-        'btn-salvar-meta'
+  alert('1 - entrou no salvarVistoria');
+
+
+  const botao =
+    document.getElementById(
+      'btn-salvar-meta'
+    );
+
+
+  const dados =
+    getDadosFormulario();
+
+
+  alert('2 - dados do formulário carregados');
+
+
+  // =====================================================
+  // VALIDAR DADOS PRINCIPAIS
+  // =====================================================
+
+  if (!validar(dados)) {
+    return;
+  }
+
+
+  alert('3 - dados principais validados');
+
+
+  // =====================================================
+  // VALIDAR OBSERVAÇÃO DOS N/C
+  // =====================================================
+
+  if (!validarItensNC()) {
+    return;
+  }
+
+
+  alert('4 - N/C validado');
+
+
+  // =====================================================
+  // SALVAR LOCALMENTE
+  // =====================================================
+
+  if (
+    window.VistoriaPersist &&
+    typeof window.VistoriaPersist
+      .saveAll ===
+      'function'
+  ) {
+
+    window.VistoriaPersist
+      .saveAll();
+  }
+
+
+  alert('5 - persistência local concluída');
+
+
+  // =====================================================
+  // ALTERAR BOTÃO
+  // =====================================================
+
+  if (botao) {
+
+    botao.disabled = true;
+
+    botao.textContent =
+      'Salvando...';
+  }
+
+
+  alert('6 - iniciando comunicação com banco');
+
+
+  try {
+
+    let vistoria;
+
+
+    let vistoriaId =
+      getVistoriaId();
+
+
+    alert(
+      '7 - vistoria ID: ' +
+      (vistoriaId || 'NOVA')
+    );
+
+
+    // ===================================================
+    // ATUALIZAR OU CRIAR VISTORIA
+    // ===================================================
+
+    if (vistoriaId) {
+
+      alert(
+        '8 - atualizando vistoria existente'
       );
 
 
-    const dados =
-      getDadosFormulario();
+      vistoria =
+        await atualizarVistoria(
+          vistoriaId,
+          dados
+        );
 
 
-    if (!validar(dados)) {
-      return;
+      alert(
+        '9 - vistoria atualizada'
+      );
+
+
+    } else {
+
+      alert(
+        '8 - criando nova vistoria'
+      );
+
+
+      vistoria =
+        await criarVistoria(
+          dados
+        );
+
+
+      alert(
+        '9 - vistoria criada'
+      );
+
+
+      vistoriaId =
+        vistoria.id;
     }
-    if (!validarItensNC()) {
-      return;
-    }
 
-    if (
-      window.VistoriaPersist &&
-      typeof window.VistoriaPersist
-        .saveAll ===
-        'function'
-    ) {
 
-      window.VistoriaPersist
-        .saveAll();
-    }
+    // ===================================================
+    // SALVAR ITENS + FOTOS
+    // ===================================================
 
+    alert(
+      '10 - iniciando salvamento dos itens'
+    );
+
+
+    await salvarItens(
+      vistoriaId
+    );
+
+
+    alert(
+      '11 - itens salvos'
+    );
+
+
+    // ===================================================
+    // CONCLUÍDO
+    // ===================================================
+
+    alert(
+      'Vistoria e itens salvos com sucesso.'
+    );
+
+
+    console.log(
+      'Vistoria salva:',
+      vistoria
+    );
+
+
+    return vistoria;
+
+
+  } catch (erro) {
+
+    console.error(
+      'Falha ao salvar:',
+      erro
+    );
+
+
+    alert(
+      'ERRO NO SALVAMENTO:\n\n' +
+      (
+        erro?.message ||
+        String(erro)
+      )
+    );
+
+
+    return null;
+
+
+  } finally {
 
     if (botao) {
-      botao.disabled = true;
+
+      botao.disabled =
+        false;
+
       botao.textContent =
-        'Salvando...';
-    }
-
-
-    try {
-
-      let vistoria;
-
-      let vistoriaId =
-        getVistoriaId();
-
-
-      if (vistoriaId) {
-
-        vistoria =
-          await atualizarVistoria(
-            vistoriaId,
-            dados
-          );
-
-      } else {
-
-        vistoria =
-          await criarVistoria(
-            dados
-          );
-
-        vistoriaId =
-          vistoria.id;
-      }
-
-
-      await salvarItens(
-        vistoriaId
-      );
-
-
-      alert(
-        'Vistoria e itens salvos com sucesso.'
-      );
-
-
-      console.log(
-        'Vistoria salva:',
-        vistoria
-      );
-
-
-      return vistoria;
-
-
-    } catch (erro) {
-
-      console.error(
-        'Falha ao salvar:',
-        erro
-      );
-
-
-      alert(
-        'Não foi possível salvar tudo no banco.\n\n' +
-        'Os dados continuam salvos neste aparelho.'
-      );
-
-
-      return null;
-
-
-    } finally {
-
-      if (botao) {
-        botao.disabled = false;
-        botao.textContent =
-          'Salvar';
-      }
+        'Salvar';
     }
   }
+}
 
 
   // =======================================================
