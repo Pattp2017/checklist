@@ -524,7 +524,9 @@ async function uploadFoto(
     if (!validar(dados)) {
       return;
     }
-
+    if (!validarItensNC()) {
+      return;
+    }
 
     if (
       window.VistoriaPersist &&
