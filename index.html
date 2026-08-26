@@ -614,13 +614,13 @@
   };
 }
 
-    btnSalvarMeta.addEventListener(
+btnSalvarMeta.addEventListener(
   'click',
   async () => {
 
-    if (
-      !window.VistoriaDB
-    ) {
+    alert('BOTÃO SALVAR ACIONADO');
+
+    if (!window.VistoriaDB) {
 
       alert(
         'Módulo do banco não carregado.'
@@ -629,10 +629,7 @@
       return;
     }
 
-
-    await window
-      .VistoriaDB
-      .salvarVistoria();
+    await window.VistoriaDB.salvarVistoria();
   }
 );
 
