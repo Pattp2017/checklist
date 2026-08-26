@@ -530,11 +530,7 @@
         labNA.appendChild(rNA); labNA.appendChild(document.createTextNode('N/A'));
         opts.appendChild(labNA);
 
-        // checkbox foto
-        const photoWrap = document.createElement('label'); photoWrap.className='photo-chk';
-        const photoChk = document.createElement('input'); photoChk.type='checkbox';
-        photoWrap.appendChild(photoChk); photoWrap.appendChild(document.createTextNode('Arquivar foto'));
-        main.appendChild(opts); main.appendChild(photoWrap);
+        main.appendChild(opts);
         row.appendChild(main);
 
         const obs = document.createElement('textarea');
