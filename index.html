@@ -458,27 +458,56 @@
     }
 
     // preencher options do select
-    function populateLocalMenu(){
-      // remove existentes exceto "Todos os locais"
-      const existing = Array.from(selectLocal.querySelectorAll('option')).filter(o=>o.value !== 'ALL');
-      existing.forEach(o=> o.remove());
+// preencher options do select
+function populateLocalMenu() {
 
-      const setores = getUniqueSetores(initialData);
-      
-      setores.sort((a, b) =>
-        a.localeCompare(
-          b,
-          'pt-BR',
-          { sensitivity: 'base' }
-        )
-      );
-      
-      setores.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = s;
-        selectLocal.appendChild(opt);
-      });
+  // remove existentes exceto "Todos os locais"
+  const existing = Array.from(
+    selectLocal.querySelectorAll('option')
+  ).filter(
+    o => o.value !== 'ALL'
+  );
+
+  existing.forEach(
+    o => o.remove()
+  );
+
+
+  // pega os locais sem duplicidade
+  const setores =
+    getUniqueSetores(initialData);
+
+
+  // coloca em ordem alfabética
+  setores.sort(
+    (a, b) =>
+      a.localeCompare(
+        b,
+        'pt-BR',
+        {
+          sensitivity: 'base'
+        }
+      )
+  );
+
+
+  // cria as opções
+  setores.forEach(
+    s => {
+
+      const opt =
+        document.createElement(
+          'option'
+        );
+
+      opt.value = s;
+      opt.textContent = s;
+
+      selectLocal.appendChild(opt);
+    }
+  );
+
+}
 
     // ----- GERAR OS SETORES/ITENS, mas inicialmente escondidos -----
     const checklistEl = document.getElementById('checklist');
