@@ -155,14 +155,26 @@
       );
 
 
-    if (speechControls) {
+if (speechControls) {
 
-      speechControls.appendChild(
-        botao
-      );
+  const status =
+    speechControls.querySelector(
+      '.speech-status'
+    );
 
-      return;
-    }
+  if (status) {
+    speechControls.insertBefore(
+      botao,
+      status
+    );
+  } else {
+    speechControls.appendChild(
+      botao
+    );
+  }
+
+  return;
+}
 
 
     // Caso o speech ainda não tenha criado
