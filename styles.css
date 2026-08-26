@@ -331,3 +331,62 @@ ul      { margin: 6px 0 12px 18px; }
     font-size: 16px;
   }
 }
+
+
+.campo-empresa {
+  position: relative;
+}
+
+.empresa-sugestoes {
+  display: none;
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+
+  z-index: 1000;
+
+  max-height: 240px;
+  overflow-y: auto;
+
+  background: #ffffff;
+
+  border: 1px solid #cbd2d9;
+  border-top: 0;
+
+  border-radius: 0 0 7px 7px;
+
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, .08);
+}
+
+.empresa-sugestoes.aberto {
+  display: block;
+}
+
+.empresa-opcao {
+  padding: 11px 12px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  border-bottom:
+    1px solid #eef1f4;
+}
+
+.empresa-opcao:last-child {
+  border-bottom: 0;
+}
+
+.empresa-opcao:hover {
+  background: #f1f5f9;
+}
+
+.empresa-sem-resultado {
+  padding: 11px 12px;
+
+  color: #6b7280;
+  font-size: 14px;
+}
