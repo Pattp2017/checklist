@@ -557,17 +557,19 @@
   // API GLOBAL
   // =======================================================
 
-  window.VistoriaDB = {
+window.VistoriaDB = {
 
-    salvarVistoria,
+  salvarVistoria,
 
-    salvarItens,
+  salvarItens,
 
-    novaVistoria,
+  uploadFoto,
 
-    getVistoriaId,
+  novaVistoria,
 
-    setVistoriaId
-  };
+  getVistoriaId,
+
+  setVistoriaId
+};
 
 })();
