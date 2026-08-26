@@ -305,21 +305,30 @@
 
       <!-- EMPRESA -->
 
-      <div class="campo">
-
-        <label for="empresa">
-          Empresa / Fazenda
-        </label>
-
-        <select id="empresa">
-
-          <option value="">
-            Carregando...
-          </option>
-
-        </select>
-
-      </div>
+    <div class="campo campo-empresa">
+    
+      <label for="empresa-busca">
+        Empresa / Fazenda
+      </label>
+    
+      <input
+        type="text"
+        id="empresa-busca"
+        placeholder="Digite o nome da empresa..."
+        autocomplete="off"
+      >
+    
+      <input
+        type="hidden"
+        id="empresa-id"
+      >
+    
+      <div
+        id="empresa-sugestoes"
+        class="empresa-sugestoes"
+      ></div>
+    
+    </div>
 
 
 
