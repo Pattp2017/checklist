@@ -125,6 +125,11 @@
     }
 
 
+    .campo-empresa {
+      position: relative;
+    }
+
+
     label {
       display: block;
 
@@ -137,8 +142,7 @@
     }
 
 
-    input,
-    select {
+    input {
       width: 100%;
       height: 44px;
 
@@ -161,8 +165,7 @@
     }
 
 
-    input:focus,
-    select:focus {
+    input:focus {
       border-color: #0b6aa6;
     }
 
@@ -170,6 +173,79 @@
     input[readonly] {
       background: #f3f4f6;
       color: #4b5563;
+    }
+
+
+    /* =========================================
+       AUTOCOMPLETE EMPRESA
+    ========================================= */
+
+    .empresa-sugestoes {
+      display: none;
+
+      position: absolute;
+
+      left: 0;
+      right: 0;
+
+      top: 100%;
+
+      z-index: 1000;
+
+      max-height: 240px;
+      overflow-y: auto;
+
+      background: #ffffff;
+
+      border:
+        1px solid #cbd2d9;
+
+      border-top: 0;
+
+      border-radius:
+        0 0 7px 7px;
+
+      box-shadow:
+        0 5px 12px
+        rgba(0, 0, 0, .08);
+    }
+
+
+    .empresa-sugestoes.aberto {
+      display: block;
+    }
+
+
+    .empresa-opcao {
+      padding:
+        11px 12px;
+
+      cursor: pointer;
+
+      font-size: 14px;
+
+      border-bottom:
+        1px solid #eef1f4;
+    }
+
+
+    .empresa-opcao:last-child {
+      border-bottom: 0;
+    }
+
+
+    .empresa-opcao:hover {
+      background: #f1f5f9;
+    }
+
+
+    .empresa-sem-resultado {
+      padding:
+        11px 12px;
+
+      color: #6b7280;
+
+      font-size: 14px;
     }
 
 
@@ -220,7 +296,8 @@
 
       margin-top: 14px;
 
-      padding: 10px 12px;
+      padding:
+        10px 12px;
 
       border-radius: 7px;
 
@@ -305,30 +382,30 @@
 
       <!-- EMPRESA -->
 
-    <div class="campo campo-empresa">
-    
-      <label for="empresa-busca">
-        Empresa / Fazenda
-      </label>
-    
-      <input
-        type="text"
-        id="empresa-busca"
-        placeholder="Digite o nome da empresa..."
-        autocomplete="off"
-      >
-    
-      <input
-        type="hidden"
-        id="empresa-id"
-      >
-    
-      <div
-        id="empresa-sugestoes"
-        class="empresa-sugestoes"
-      ></div>
-    
-    </div>
+      <div class="campo campo-empresa">
+
+        <label for="empresa-busca">
+          Empresa / Fazenda
+        </label>
+
+        <input
+          type="text"
+          id="empresa-busca"
+          placeholder="Carregando empresas..."
+          autocomplete="off"
+        >
+
+        <input
+          type="hidden"
+          id="empresa-id"
+        >
+
+        <div
+          id="empresa-sugestoes"
+          class="empresa-sugestoes"
+        ></div>
+
+      </div>
 
 
 
@@ -447,10 +524,23 @@
     // ELEMENTOS
     // =========================================
 
-    const empresaSelect =
+    const empresaBusca =
       document.getElementById(
-        'empresa'
+        'empresa-busca'
       );
+
+    const empresaIdEl =
+      document.getElementById(
+        'empresa-id'
+      );
+
+    const empresaSugestoes =
+      document.getElementById(
+        'empresa-sugestoes'
+      );
+
+    let empresasCarregadas = [];
+
 
     const responsavelTecnicoEl =
       document.getElementById(
@@ -572,12 +662,10 @@
 
 
     // =========================================
-    // MENSAGEM DE ERRO
+    // MENSAGENS
     // =========================================
 
-    function mostrarErro(
-      texto
-    ) {
+    function mostrarErro(texto) {
 
       mensagemEl.className =
         'mensagem erro';
@@ -598,6 +686,25 @@
 
 
     // =========================================
+    // NORMALIZAR TEXTO
+    // =========================================
+
+    function normalizarTexto(texto) {
+
+      return String(
+        texto || ''
+      )
+        .normalize('NFD')
+        .replace(
+          /[\u0300-\u036f]/g,
+          ''
+        )
+        .toLowerCase()
+        .trim();
+    }
+
+
+    // =========================================
     // CARREGAR EMPRESAS
     // =========================================
 
@@ -605,11 +712,11 @@
 
       limparMensagem();
 
-      empresaSelect.disabled =
+      empresaBusca.disabled =
         true;
 
-      empresaSelect.innerHTML =
-        '<option value="">Carregando...</option>';
+      empresaBusca.placeholder =
+        'Carregando empresas...';
 
 
       try {
@@ -639,7 +746,6 @@
 
                 Accept:
                   'application/json'
-
               }
             }
           );
@@ -649,9 +755,7 @@
           await resposta.text();
 
 
-        if (
-          !resposta.ok
-        ) {
+        if (!resposta.ok) {
 
           throw new Error(
             texto ||
@@ -660,48 +764,23 @@
         }
 
 
-        const empresas =
+        empresasCarregadas =
           texto
             ? JSON.parse(texto)
             : [];
 
 
-        empresaSelect.innerHTML =
-          '<option value="">Selecione...</option>';
-
-
-        empresas.forEach(
-          empresa => {
-
-            const option =
-              document.createElement(
-                'option'
-              );
-
-            option.value =
-              empresa.id;
-
-            option.textContent =
-              empresa.nome;
-
-            option.dataset.nome =
-              empresa.nome;
-
-            empresaSelect
-              .appendChild(
-                option
-              );
-          }
-        );
+        empresaBusca.placeholder =
+          'Digite o nome da empresa...';
 
 
         console.log(
-          `${empresas.length} empresa(s) carregada(s).`
+          `${empresasCarregadas.length} empresa(s) carregada(s).`
         );
 
 
         if (
-          empresas.length === 0
+          empresasCarregadas.length === 0
         ) {
 
           mostrarErro(
@@ -718,8 +797,8 @@
         );
 
 
-        empresaSelect.innerHTML =
-          '<option value="">Erro ao carregar empresas</option>';
+        empresaBusca.placeholder =
+          'Erro ao carregar empresas';
 
 
         mostrarErro(
@@ -728,11 +807,169 @@
 
       } finally {
 
-        empresaSelect.disabled =
+        empresaBusca.disabled =
           false;
       }
     }
 
+
+    // =========================================
+    // MOSTRAR SUGESTÕES
+    // =========================================
+
+    function mostrarSugestoesEmpresa() {
+
+      const busca =
+        normalizarTexto(
+          empresaBusca.value
+        );
+
+
+      // se alterar o texto,
+      // invalida seleção anterior
+      empresaIdEl.value = '';
+
+
+      empresaSugestoes.innerHTML =
+        '';
+
+
+      if (!busca) {
+
+        empresaSugestoes
+          .classList
+          .remove(
+            'aberto'
+          );
+
+        return;
+      }
+
+
+      const encontradas =
+        empresasCarregadas
+          .filter(
+            empresa =>
+
+              normalizarTexto(
+                empresa.nome
+              ).includes(
+                busca
+              )
+          )
+          .slice(
+            0,
+            20
+          );
+
+
+      if (
+        encontradas.length === 0
+      ) {
+
+        const vazio =
+          document.createElement(
+            'div'
+          );
+
+        vazio.className =
+          'empresa-sem-resultado';
+
+        vazio.textContent =
+          'Nenhuma empresa encontrada.';
+
+        empresaSugestoes
+          .appendChild(
+            vazio
+          );
+
+
+      } else {
+
+        encontradas.forEach(
+          empresa => {
+
+            const opcao =
+              document.createElement(
+                'div'
+              );
+
+            opcao.className =
+              'empresa-opcao';
+
+            opcao.textContent =
+              empresa.nome;
+
+
+            opcao.addEventListener(
+              'click',
+              () => {
+
+                empresaBusca.value =
+                  empresa.nome;
+
+                empresaIdEl.value =
+                  empresa.id;
+
+                empresaSugestoes
+                  .classList
+                  .remove(
+                    'aberto'
+                  );
+              }
+            );
+
+
+            empresaSugestoes
+              .appendChild(
+                opcao
+              );
+          }
+        );
+      }
+
+
+      empresaSugestoes
+        .classList
+        .add(
+          'aberto'
+        );
+    }
+
+
+    empresaBusca
+      .addEventListener(
+        'input',
+        mostrarSugestoesEmpresa
+      );
+
+
+    // fecha lista ao clicar fora
+
+    document
+      .addEventListener(
+        'click',
+        evento => {
+
+          if (
+            !evento.target.closest(
+              '.campo-empresa'
+            )
+          ) {
+
+            empresaSugestoes
+              .classList
+              .remove(
+                'aberto'
+              );
+          }
+        }
+      );
+
+
+    // =========================================
+    // CARREGAR
+    // =========================================
 
     carregarEmpresas();
 
@@ -750,13 +987,13 @@
 
 
           const empresaId =
-            empresaSelect.value;
+            empresaIdEl.value;
 
 
           const empresaNome =
-            empresaSelect
-              .selectedOptions[0]
-              ?.dataset.nome || '';
+            empresaBusca
+              .value
+              .trim();
 
 
           const responsavelTecnico =
@@ -786,10 +1023,10 @@
           if (!empresaId) {
 
             alert(
-              'Selecione a empresa/fazenda.'
+              'Selecione uma empresa válida da lista.'
             );
 
-            empresaSelect.focus();
+            empresaBusca.focus();
 
             return;
           }
@@ -827,6 +1064,7 @@
           console.log(
             'Nova vistoria:',
             {
+
               empresa_id:
                 empresaId,
 
