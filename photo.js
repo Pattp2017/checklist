@@ -339,57 +339,48 @@ if (speechControls) {
   // API
   // =======================================================
 
-  window.VistoriaFotos = {
+// =======================================================
+// API
+// =======================================================
 
-    getFoto(row) {
+window.VistoriaFotos = {
 
-      return fotosPendentes.get(
-        getChaveItem(row)
-      ) || null;
-    },
+  getFoto(row) {
+    return fotosPendentes.get(
+      getChaveItem(row)
+    ) || null;
+  },
 
+  getFotoPorDados(setor, item) {
+    return fotosPendentes.get(
+      setor + '||' + item
+    ) || null;
+  },
 
-    getFotoPorDados(
-      setor,
-      item
-    ) {
+  getFotoPorChave(chave) {
+    return fotosPendentes.get(chave) || null;
+  },
 
-      return fotosPendentes.get(
-        setor + '||' + item
-      ) || null;
-    },
+  getQuantidade() {
+    return fotosPendentes.size;
+  },
 
+  getTodas() {
+    return Array.from(
+      fotosPendentes.entries()
+    );
+  },
 
-    getQuantidade() {
+  removerFoto,
 
-      return fotosPendentes.size;
-    },
+  limpar() {
+    fotosPendentes.clear();
 
+    document
+      .querySelectorAll('.btn-foto')
+      .forEach(botao => botao.remove());
+  }
 
-    getTodas() {
-
-      return Array.from(
-        fotosPendentes.entries()
-      );
-    },
-
-
-    removerFoto,
-
-
-    limpar() {
-
-      fotosPendentes.clear();
-
-      document
-        .querySelectorAll(
-          '.btn-foto'
-        )
-        .forEach(
-          botao =>
-            botao.remove()
-        );
-    }
-  };
+};
 
 })();
