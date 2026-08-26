@@ -16,7 +16,8 @@
 
   const TABELA_ITENS =
     'checklist_itens';
-
+  const BUCKET_FOTOS =
+    'checklist-fotos';
 
   // =======================================================
   // HEADERS
@@ -390,7 +391,87 @@
     return itens;
   }
 
+// =======================================================
+// UPLOAD DE FOTO
+// =======================================================
 
+async function uploadFoto(
+  vistoriaId,
+  setor,
+  item,
+  arquivo
+) {
+
+  if (!arquivo) {
+    return null;
+  }
+
+  const extensao =
+    arquivo.name &&
+    arquivo.name.includes('.')
+      ? arquivo.name
+          .split('.')
+          .pop()
+          .toLowerCase()
+      : 'jpg';
+
+  const nomeArquivo =
+    crypto.randomUUID() +
+    '.' +
+    extensao;
+
+  const caminho =
+    vistoriaId +
+    '/' +
+    nomeArquivo;
+
+  const resposta =
+    await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${BUCKET_FOTOS}/${caminho}`,
+      {
+        method: 'POST',
+
+        headers: {
+          apikey: SUPABASE_KEY,
+
+          Authorization:
+            'Bearer ' + SUPABASE_KEY,
+
+          'Content-Type':
+            arquivo.type || 'image/jpeg',
+
+          'x-upsert':
+            'false'
+        },
+
+        body: arquivo
+      }
+    );
+
+  if (!resposta.ok) {
+
+    const texto =
+      await resposta.text();
+
+    console.error(
+      'Erro no upload da foto:',
+      resposta.status,
+      texto
+    );
+
+    throw new Error(
+      'Erro ao enviar foto: ' +
+      texto
+    );
+  }
+
+  console.log(
+    'Foto enviada:',
+    caminho
+  );
+
+  return caminho;
+}
   // =======================================================
   // SALVAR ITENS DA VISTORIA
   // =======================================================
