@@ -90,7 +90,156 @@
       });
   }
 
+   // =======================================================
+  // CARREGA CABEÇALHO
+  // =======================================================
+async function carregarDadosVistoria() {
 
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const vistoriaId =
+    params.get(
+      'vistoria_id'
+    ) ||
+    localStorage.getItem(
+      'checklist_vistoria_id'
+    );
+
+
+  if (!vistoriaId) {
+    return;
+  }
+
+
+  const SUPABASE_URL =
+    'https://dbleblnwolbbxtscjxif.supabase.co';
+
+  const SUPABASE_KEY =
+    'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+
+
+  try {
+
+    const resposta =
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=*`,
+        {
+          headers: {
+
+            apikey:
+              SUPABASE_KEY,
+
+            Authorization:
+              'Bearer ' +
+              SUPABASE_KEY
+          }
+        }
+      );
+
+
+    if (!resposta.ok) {
+
+      const texto =
+        await resposta.text();
+
+      throw new Error(
+        texto
+      );
+    }
+
+
+    const registros =
+      await resposta.json();
+
+
+    if (!registros.length) {
+
+      throw new Error(
+        'Vistoria não encontrada.'
+      );
+    }
+
+
+    const vistoria =
+      registros[0];
+
+
+    document
+      .getElementById(
+        'meta-empresa-id'
+      )
+      .value =
+        vistoria.empresa_id || '';
+
+
+    document
+      .getElementById(
+        'meta-empresa-nome'
+      )
+      .value =
+        vistoria.empresa_nome || '';
+
+
+    document
+      .getElementById(
+        'meta-responsavel-tecnico'
+      )
+      .value =
+        vistoria.responsavel_tecnico || '';
+
+
+    document
+      .getElementById(
+        'meta-responsavel-auditoria'
+      )
+      .value =
+        vistoria.responsavel_auditoria || '';
+
+
+    document
+      .getElementById(
+        'meta-data-auditoria'
+      )
+      .value =
+        vistoria.data_auditoria || '';
+
+
+    document
+      .getElementById(
+        'meta-horario'
+      )
+      .value =
+        vistoria.horario || '';
+
+
+    localStorage.setItem(
+      'checklist_vistoria_id',
+      vistoria.id
+    );
+
+
+    console.log(
+      'Dados da vistoria carregados:',
+      vistoria
+    );
+
+
+  } catch (erro) {
+
+    console.error(
+      'Erro ao carregar vistoria:',
+      erro
+    );
+
+    alert(
+      'Não foi possível carregar os dados da vistoria.'
+    );
+  }
+}
+  
   // =======================================================
   // RESPOSTAS
   // =======================================================
