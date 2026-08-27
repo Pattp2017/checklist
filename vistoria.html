@@ -6,7 +6,6 @@
   <title>Checklist de Vistoria</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
 
   <center>
@@ -14,1852 +13,467 @@
   </center>
 
   <div class="meta" aria-label="Dados da auditoria">
-
     <label>
       Empresa:
-      <input
-        id="meta-empresa-nome"
-        type="text"
-        placeholder="Nome da empresa"
-      />
+      <input id="meta-empresa-nome" type="text" placeholder="Nome da empresa" />
     </label>
 
-    <input
-      id="meta-empresa-id"
-      type="hidden"
-    />
+    <input id="meta-empresa-id" type="hidden" />
 
     <label>
       Responsável técnico:
-      <input
-        id="meta-responsavel-tecnico"
-        type="text"
-        placeholder="Responsável técnico"
-      />
+      <input id="meta-responsavel-tecnico" type="text" placeholder="Responsável técnico" />
     </label>
 
     <label>
       Responsável pela auditoria:
-      <input
-        id="meta-responsavel-auditoria"
-        type="text"
-        placeholder="Responsável pela auditoria"
-      />
+      <input id="meta-responsavel-auditoria" type="text" placeholder="Responsável pela auditoria" />
     </label>
 
     <label>
       Data da auditoria:
-      <input
-        id="meta-data-auditoria"
-        type="date"
-      />
+      <input id="meta-data-auditoria" type="date" />
     </label>
 
     <label>
       Horário:
-      <input
-        id="meta-horario"
-        type="text"
-        readonly
-      />
+      <input id="meta-horario" type="text" readonly />
     </label>
 
-   <button
-      class="btn-save"
-      id="btn-salvar-meta"
-      type="button"
-    >
+    <button class="btn-save" id="btn-salvar-meta" type="button">
       Salvar
     </button>
-    
-    <button
-      class="btn"
-      id="btn-concluir-checklist"
-      type="button"
-    >
+
+    <button class="btn" id="btn-concluir-checklist" type="button">
       Concluir Checklist
     </button>
-
   </div>
-
 
   <div class="controls-top">
+    <label class="small" for="select-local">Escolha o local:</label>
 
-    <label class="small">
-      Escolha o local:
-    </label>
-
-    <select
-      id="select-local"
-      class="select-local"
-      aria-label="Selecionar local"
-      disabled
-    >
-      <option value="ALL">
-        Carregando locais...
-      </option>
+    <select id="select-local" class="select-local" aria-label="Selecionar local" disabled>
+      <option value="ALL">Carregando locais...</option>
     </select>
-
   </div>
-
 
   <div id="checklist">
-    <div style="padding:16px;text-align:center;">
-      Carregando checklist...
-    </div>
+    <div style="padding:16px;text-align:center;">Carregando checklist...</div>
   </div>
 
-
   <div class="controls">
-
-    <button
-      class="btn"
-      id="btn-view-report"
-      type="button"
-    >
+    <button class="btn" id="btn-view-report" type="button">
       Visualizar Relatório
     </button>
 
     <div class="filter small">
-
-      <label>
-        Filtrar por status:
-      </label>
-
+      <label for="report-filter">Filtrar por status:</label>
       <select id="report-filter">
-
-        <option value="ALL">
-          Todos
-        </option>
-
-        <option value="C">
-          C (Correto)
-        </option>
-
-        <option value="NC">
-          N/C (Não Conforme)
-        </option>
-
-        <option value="NA">
-          N/A
-        </option>
-
+        <option value="ALL">Todos</option>
+        <option value="C">C (Correto)</option>
+        <option value="NC">N/C (Não Conforme)</option>
+        <option value="NA">N/A</option>
       </select>
+    </div>
+  </div>
+
+  <div id="report" class="report-box" style="display:none;">
+    <div id="report-meta"></div>
+    <div id="report-summary" style="margin-top:8px;"></div>
+    <div id="report-list"></div>
+  </div>
 
 <script>
-
 (function () {
+  const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
 
-  // =========================================================
-  // SUPABASE - MODELO DO CHECKLIST
-  // =========================================================
-
-  const SUPABASE_URL =
-    'https://dbleblnwolbbxtscjxif.supabase.co';
-
-  const SUPABASE_KEY =
-    'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
-
-
-  // =========================================================
-  // ELEMENTOS
-  // =========================================================
-
-  const selectLocal =
-    document.getElementById(
-      'select-local'
-    );
-
-  const checklistEl =
-    document.getElementById(
-      'checklist'
-    );
-
-  const btnSalvarMeta =
-    document.getElementById(
-      'btn-salvar-meta'
-    );
-const btnConcluirChecklist =
-  document.getElementById(
-    'btn-concluir-checklist'
-  );
-  const btnView =
-    document.getElementById(
-      'btn-view-report'
-    );
-
-  const report =
-    document.getElementById(
-      'report'
-    );
-
-  const reportMeta =
-    document.getElementById(
-      'report-meta'
-    );
-
-  const reportSummary =
-    document.getElementById(
-      'report-summary'
-    );
-
-  const reportList =
-    document.getElementById(
-      'report-list'
-    );
-
-  const reportFilter =
-    document.getElementById(
-      'report-filter'
-    );
-
-  const btnDownloadCsv =
-    document.getElementById(
-      'btn-download-csv'
-    );
-
-  const btnJustNc =
-    document.getElementById(
-      'btn-just-nc'
-    );
-
-
-  // =========================================================
-  // DADOS CARREGADOS DO SUPABASE
-  // =========================================================
+  const selectLocal = document.getElementById('select-local');
+  const checklistEl = document.getElementById('checklist');
+  const btnSalvarMeta = document.getElementById('btn-salvar-meta');
+  const btnConcluirChecklist = document.getElementById('btn-concluir-checklist');
+  const btnView = document.getElementById('btn-view-report');
+  const report = document.getElementById('report');
+  const reportMeta = document.getElementById('report-meta');
+  const reportSummary = document.getElementById('report-summary');
+  const reportList = document.getElementById('report-list');
+  const reportFilter = document.getElementById('report-filter');
 
   let initialData = [];
 
-
-  // =========================================================
-  // HEADERS SUPABASE
-  // =========================================================
-
   function getSupabaseHeaders() {
-
     return {
-
-      apikey:
-        SUPABASE_KEY,
-
-      Authorization:
-        'Bearer ' +
-        SUPABASE_KEY,
-
-      Accept:
-        'application/json'
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      Accept: 'application/json'
     };
   }
 
-
-  // =========================================================
-  // FETCH JSON
-  // =========================================================
-
   async function buscarJson(url) {
+    const resposta = await fetch(url, {
+      method: 'GET',
+      headers: getSupabaseHeaders()
+    });
 
-    const resposta =
-      await fetch(
-        url,
-        {
-          method: 'GET',
-          headers:
-            getSupabaseHeaders()
-        }
-      );
-
-
-    const texto =
-      await resposta.text();
-
+    const texto = await resposta.text();
 
     if (!resposta.ok) {
-
-      throw new Error(
-        texto ||
-        'Erro ao consultar Supabase.'
-      );
+      throw new Error(texto || 'Erro ao consultar Supabase.');
     }
 
-
-    return texto
-      ? JSON.parse(texto)
-      : [];
+    return texto ? JSON.parse(texto) : [];
   }
-
-
-  // =========================================================
-  // CARREGAR MODELO DO CHECKLIST
-  // =========================================================
 
   async function carregarModeloChecklist() {
+    checklistEl.innerHTML = '<div style="padding:16px;text-align:center;">Carregando checklist...</div>';
+    selectLocal.disabled = true;
+    selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
 
-    checklistEl.innerHTML =
-      '<div style="padding:16px;text-align:center;">Carregando checklist...</div>';
+    const [locais, itensMestre, vinculos] = await Promise.all([
+      buscarJson(
+        `${SUPABASE_URL}/rest/v1/checklist_locais?select=id,nome,ordem,ativo&ativo=eq.true`
+      ),
+      buscarJson(
+        `${SUPABASE_URL}/rest/v1/checklist_itens_mestre?select=id,descricao,ativo&ativo=eq.true`
+      ),
+      buscarJson(
+        `${SUPABASE_URL}/rest/v1/checklist_local_itens?select=id,local_id,item_id,ordem,ativo&ativo=eq.true`
+      )
+    ]);
 
-    selectLocal.disabled =
-      true;
+    const locaisPorId = new Map(locais.map(local => [String(local.id), local]));
+    const itensPorId = new Map(itensMestre.map(item => [String(item.id), item]));
 
-    selectLocal.innerHTML =
-      '<option value="ALL">Carregando locais...</option>';
+    initialData = vinculos
+      .map(vinculo => {
+        const local = locaisPorId.get(String(vinculo.local_id));
+        const item = itensPorId.get(String(vinculo.item_id));
 
+        if (!local || !item) return null;
 
-    // ---------------------------------------------------------
-    // 1. LOCAIS ATIVOS
-    // ---------------------------------------------------------
+        return {
+          local_id: local.id,
+          item_id: item.id,
+          setor: local.nome,
+          item: item.descricao,
+          ordem: vinculo.ordem || 0,
+          status: 'C'
+        };
+      })
+      .filter(Boolean);
 
-    const locais =
-      await buscarJson(
-        `${SUPABASE_URL}/rest/v1/checklist_locais` +
-        `?select=id,nome,ordem,ativo` +
-        `&ativo=eq.true`
-      );
-
-
-    // ---------------------------------------------------------
-    // 2. ITENS MESTRE ATIVOS
-    // ---------------------------------------------------------
-
-    const itensMestre =
-      await buscarJson(
-        `${SUPABASE_URL}/rest/v1/checklist_itens_mestre` +
-        `?select=id,descricao,ativo` +
-        `&ativo=eq.true`
-      );
-
-
-    // ---------------------------------------------------------
-    // 3. MATRIZ LOCAL X ITEM ATIVA
-    // ---------------------------------------------------------
-
-    const vinculos =
-      await buscarJson(
-        `${SUPABASE_URL}/rest/v1/checklist_local_itens` +
-        `?select=id,local_id,item_id,ordem,ativo` +
-        `&ativo=eq.true`
-      );
-
-
-    // ---------------------------------------------------------
-    // MAPAS PARA JUNÇÃO
-    // ---------------------------------------------------------
-
-    const locaisPorId =
-      new Map(
-        locais.map(
-          local => [
-            local.id,
-            local
-          ]
-        )
-      );
-
-
-    const itensPorId =
-      new Map(
-        itensMestre.map(
-          item => [
-            item.id,
-            item
-          ]
-        )
-      );
-
-
-    // ---------------------------------------------------------
-    // MONTA O ARRAY USADO PELA TELA
-    // TODOS OS ITENS COMEÇAM COMO C
-    // ---------------------------------------------------------
-
-    initialData =
-      vinculos
-        .map(
-          vinculo => {
-
-            const local =
-              locaisPorId.get(
-                vinculo.local_id
-              );
-
-            const item =
-              itensPorId.get(
-                vinculo.item_id
-              );
-
-
-            if (
-              !local ||
-              !item
-            ) {
-              return null;
-            }
-
-
-            return {
-
-              local_id:
-                local.id,
-
-              item_id:
-                item.id,
-
-              setor:
-                local.nome,
-
-              item:
-                item.descricao,
-
-              ordem:
-                vinculo.ordem || 0,
-
-              status:
-                'C'
-            };
-          }
-        )
-        .filter(Boolean);
-
-
-    // ---------------------------------------------------------
-    // ORDEM DA TELA:
-    // LOCAL ALFABÉTICO + ORDEM DO ITEM
-    // ---------------------------------------------------------
-
-    initialData.sort(
-      (a, b) => {
-
-        const porLocal =
-          a.setor.localeCompare(
-            b.setor,
-            'pt-BR',
-            {
-              sensitivity:
-                'base'
-            }
-          );
-
-
-        if (porLocal !== 0) {
-          return porLocal;
-        }
-
-
-        return (
-          (a.ordem || 0) -
-          (b.ordem || 0)
-        );
-      }
-    );
-
+    initialData.sort((a, b) => {
+      const porLocal = a.setor.localeCompare(b.setor, 'pt-BR', { sensitivity: 'base' });
+      if (porLocal !== 0) return porLocal;
+      return (a.ordem || 0) - (b.ordem || 0);
+    });
 
     if (!initialData.length) {
-
-      throw new Error(
-        'Nenhum item ativo foi encontrado na matriz do checklist.'
-      );
+      throw new Error('Nenhum item ativo foi encontrado na matriz do checklist.');
     }
-
 
     populateLocalMenu();
+    renderAllSections(initialData);
 
-    renderAllSections(
-      initialData
-    );
-
-    selectLocal.disabled =
-      false;
-
-    selectLocal.value =
-      'ALL';
-
-    showLocal(
-      'ALL'
-    );
-
+    selectLocal.disabled = false;
+    selectLocal.value = 'ALL';
+    showLocal('ALL', false);
 
     console.log(
-      `${locais.length} local(is), ` +
-      `${itensMestre.length} item(ns) mestre e ` +
-      `${initialData.length} vínculo(s) carregados.`
+      `${locais.length} local(is), ${itensMestre.length} item(ns) mestre e ${initialData.length} vínculo(s) carregados.`
     );
   }
-
-
-  // =========================================================
-  // MENU DE LOCAIS
-  // =========================================================
 
   function getUniqueSetores(data) {
-
-    return [
-      ...new Set(
-        data.map(
-          item =>
-            item.setor
-        )
-      )
-    ];
+    return [...new Set(data.map(item => item.setor))];
   }
-
 
   function populateLocalMenu() {
-
-    const setores =
-      getUniqueSetores(
-        initialData
-      );
-
-
-    setores.sort(
-      (a, b) =>
-        a.localeCompare(
-          b,
-          'pt-BR',
-          {
-            sensitivity:
-              'base'
-          }
-        )
-    );
-
-
-    selectLocal.innerHTML =
-      '<option value="ALL">Todos os locais</option>';
-
-
-    setores.forEach(
-      setor => {
-
-        const option =
-          document.createElement(
-            'option'
-          );
-
-        option.value =
-          setor;
-
-        option.textContent =
-          setor;
-
-        selectLocal.appendChild(
-          option
-        );
-      }
-    );
-  }
-
-
-  // =========================================================
-  // RADIO
-  // =========================================================
-
-  function createRadio(
-    name,
-    val,
-    checked = false
-  ) {
-
-    const radio =
-      document.createElement(
-        'input'
-      );
-
-    radio.type =
-      'radio';
-
-    radio.name =
-      name;
-
-    radio.value =
-      val;
-
-    radio.checked =
-      checked;
-
-    radio.style.width =
-      '18px';
-
-    radio.style.height =
-      '18px';
-
-    return radio;
-  }
-
-
-  // =========================================================
-  // RENDERIZAR CHECKLIST
-  // =========================================================
-
-  function renderAllSections(data) {
-
-    checklistEl.innerHTML =
-      '';
-
-
-    const sections =
-      {};
-
-
-    data.forEach(
-      (d, idx) => {
-
-        if (
-          !sections[
-            d.setor
-          ]
-        ) {
-
-          const section =
-            document.createElement(
-              'section'
-            );
-
-          section.className =
-            'sector';
-
-          section.dataset.setor =
-            d.setor;
-
-          section.dataset.localId =
-            d.local_id || '';
-
-          section.style.display =
-            'none';
-
-
-          const h =
-            document.createElement(
-              'h2'
-            );
-
-          h.textContent =
-            d.setor;
-
-
-          section.appendChild(
-            h
-          );
-
-          checklistEl.appendChild(
-            section
-          );
-
-          sections[
-            d.setor
-          ] =
-            section;
-        }
-
-
-        const section =
-          sections[
-            d.setor
-          ];
-
-
-        const row =
-          document.createElement(
-            'div'
-          );
-
-        row.className =
-          'item-row';
-
-        row.dataset.setor =
-          d.setor;
-
-        row.dataset.item =
-          d.item;
-
-        row.dataset.localId =
-          d.local_id || '';
-
-        row.dataset.itemId =
-          d.item_id || '';
-
-
-        const main =
-          document.createElement(
-            'div'
-          );
-
-        main.className =
-          'row-main';
-
-
-        const lbl =
-          document.createElement(
-            'div'
-          );
-
-        lbl.className =
-          'item-label';
-
-        lbl.textContent =
-          d.item;
-
-        main.appendChild(
-          lbl
-        );
-
-
-        const opts =
-          document.createElement(
-            'div'
-          );
-
-        opts.className =
-          'options';
-
-
-        const name =
-          `radio_${idx}`;
-
-
-        // C
-
-        const labC =
-          document.createElement(
-            'label'
-          );
-
-        const rC =
-          createRadio(
-            name,
-            'C',
-            true
-          );
-
-        labC.appendChild(
-          rC
-        );
-
-        labC.appendChild(
-          document.createTextNode(
-            'C'
-          )
-        );
-
-        opts.appendChild(
-          labC
-        );
-
-
-        // NC
-
-        const labNC =
-          document.createElement(
-            'label'
-          );
-
-        const rNC =
-          createRadio(
-            name,
-            'NC',
-            false
-          );
-
-        labNC.appendChild(
-          rNC
-        );
-
-        labNC.appendChild(
-          document.createTextNode(
-            'N/C'
-          )
-        );
-
-        opts.appendChild(
-          labNC
-        );
-
-
-        // NA
-
-        const labNA =
-          document.createElement(
-            'label'
-          );
-
-        const rNA =
-          createRadio(
-            name,
-            'NA',
-            false
-          );
-
-        labNA.appendChild(
-          rNA
-        );
-
-        labNA.appendChild(
-          document.createTextNode(
-            'N/A'
-          )
-        );
-
-        opts.appendChild(
-          labNA
-        );
-
-
-        main.appendChild(
-          opts
-        );
-
-        row.appendChild(
-          main
-        );
-
-
-        // OBSERVAÇÃO
-
-        const obs =
-          document.createElement(
-            'textarea'
-          );
-
-        obs.className =
-          'obs';
-
-        obs.placeholder =
-          'Observação (obrigatória quando N/C)';
-
-        obs.rows =
-          2;
-
-        obs.style.display =
-          'none';
-
-        row.appendChild(
-          obs
-        );
-
-
-        // ALTERAÇÃO STATUS
-
-        [
-          rC,
-          rNC,
-          rNA
-        ].forEach(
-          radio => {
-
-            radio.addEventListener(
-              'change',
-              () => {
-
-                if (
-                  rNC.checked
-                ) {
-
-                  obs.style.display =
-                    'block';
-
-                  obs.focus();
-
-                } else {
-
-                  obs.style.display =
-                    'none';
-
-                  obs.value =
-                    '';
-                }
-              }
-            );
-          }
-        );
-
-
-        section.appendChild(
-          row
-        );
-      }
-    );
-  }
-
-
-  // =========================================================
-  // MOSTRAR LOCAL
-  // =========================================================
-
-  function showLocal(local) {
-
-    const sections =
-      checklistEl.querySelectorAll(
-        '.sector'
-      );
-
-
-    sections.forEach(
-      section => {
-
-        section.style.display =
-          'none';
-      }
-    );
-
-
-    if (
-      local === 'ALL'
-    ) {
-
-      sections.forEach(
-        section => {
-
-          section.style.display =
-            'block';
-        }
-      );
-
-    } else {
-
-      const target =
-        Array.from(
-          sections
-        ).find(
-          section =>
-            section.dataset.setor ===
-            local
-        );
-
-
-      if (target) {
-
-        target.style.display =
-          'block';
-      }
-    }
-
-
-    checklistEl.scrollIntoView({
-      behavior:
-        'smooth',
-
-      block:
-        'start'
+    const setores = getUniqueSetores(initialData)
+      .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+
+    selectLocal.innerHTML = '<option value="ALL">Todos os locais</option>';
+
+    setores.forEach(setor => {
+      const option = document.createElement('option');
+      option.value = setor;
+      option.textContent = setor;
+      selectLocal.appendChild(option);
     });
   }
 
+  function createRadio(name, val, checked) {
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = name;
+    radio.value = val;
+    radio.checked = !!checked;
+    radio.style.width = '18px';
+    radio.style.height = '18px';
+    return radio;
+  }
 
-  selectLocal.addEventListener(
-    'change',
-    () => {
-
-      showLocal(
-        selectLocal.value
-      );
+  function atualizarEstadoLinha(row, obs, rNC) {
+    if (rNC.checked) {
+      obs.style.display = 'block';
+      row.classList.add('is-nc');
+    } else {
+      obs.style.display = 'none';
+      obs.classList.remove('obs-required');
+      row.classList.remove('is-nc');
     }
-  );
+  }
 
+  function renderAllSections(data) {
+    checklistEl.innerHTML = '';
+    const sections = {};
 
-  // =========================================================
-  // METADADOS
-  // =========================================================
+    data.forEach((d, idx) => {
+      if (!sections[d.setor]) {
+        const section = document.createElement('section');
+        section.className = 'sector';
+        section.dataset.setor = d.setor;
+        section.dataset.localId = d.local_id || '';
+        section.style.display = 'none';
+
+        const h = document.createElement('h2');
+        h.textContent = d.setor;
+        section.appendChild(h);
+
+        checklistEl.appendChild(section);
+        sections[d.setor] = section;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.dataset.setor = d.setor;
+      row.dataset.item = d.item;
+      row.dataset.localId = d.local_id || '';
+      row.dataset.itemId = d.item_id || '';
+
+      const main = document.createElement('div');
+      main.className = 'row-main';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'item-label';
+      lbl.textContent = d.item;
+      main.appendChild(lbl);
+
+      const opts = document.createElement('div');
+      opts.className = 'options';
+
+      const name = `radio_${idx}`;
+      const rC = createRadio(name, 'C', true);
+      const rNC = createRadio(name, 'NC', false);
+      const rNA = createRadio(name, 'NA', false);
+
+      [
+        [rC, 'C'],
+        [rNC, 'N/C'],
+        [rNA, 'N/A']
+      ].forEach(([radio, texto]) => {
+        const label = document.createElement('label');
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(texto));
+        opts.appendChild(label);
+      });
+
+      main.appendChild(opts);
+      row.appendChild(main);
+
+      const obs = document.createElement('textarea');
+      obs.className = 'obs';
+      obs.placeholder = 'Observação (obrigatória quando N/C)';
+      obs.rows = 2;
+      obs.style.display = 'none';
+      row.appendChild(obs);
+
+      [rC, rNC, rNA].forEach(radio => {
+        radio.addEventListener('change', () => {
+          atualizarEstadoLinha(row, obs, rNC);
+
+          if (!rNC.checked) {
+            obs.value = '';
+          }
+        });
+      });
+
+      sections[d.setor].appendChild(row);
+    });
+  }
+
+  function showLocal(local, rolar = true) {
+    const sections = checklistEl.querySelectorAll('.sector');
+
+    sections.forEach(section => {
+      section.style.display =
+        local === 'ALL' || section.dataset.setor === local
+          ? 'block'
+          : 'none';
+    });
+
+    if (rolar) {
+      checklistEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  selectLocal.addEventListener('change', () => {
+    showLocal(selectLocal.value);
+  });
 
   function getMetadados() {
-
     return {
-
-      empresa_id:
-        document.getElementById(
-          'meta-empresa-id'
-        )?.value || null,
-
-      empresa_nome:
-        document.getElementById(
-          'meta-empresa-nome'
-        )?.value.trim() || '',
-
-      responsavel_tecnico:
-        document.getElementById(
-          'meta-responsavel-tecnico'
-        )?.value.trim() || '',
-
-      responsavel_auditoria:
-        document.getElementById(
-          'meta-responsavel-auditoria'
-        )?.value.trim() || '',
-
-      data_auditoria:
-        document.getElementById(
-          'meta-data-auditoria'
-        )?.value || '',
-
-      horario:
-        document.getElementById(
-          'meta-horario'
-        )?.value.trim() || ''
+      empresa_nome: document.getElementById('meta-empresa-nome')?.value.trim() || '',
+      responsavel_tecnico: document.getElementById('meta-responsavel-tecnico')?.value.trim() || '',
+      responsavel_auditoria: document.getElementById('meta-responsavel-auditoria')?.value.trim() || '',
+      data_auditoria: document.getElementById('meta-data-auditoria')?.value || '',
+      horario: document.getElementById('meta-horario')?.value.trim() || ''
     };
   }
 
+  function collectResponsesTela() {
+    return Array.from(document.querySelectorAll('.item-row')).map(row => {
+      const marcado = row.querySelector('input[type="radio"]:checked');
+      const textarea = row.querySelector('textarea.obs');
 
-  // =========================================================
-  // SALVAR
-  // =========================================================
+      return {
+        setor: row.dataset.setor || '',
+        item: row.dataset.item || '',
+        status: marcado ? marcado.value : 'C',
+        obs: textarea ? textarea.value.trim() : '',
+        photo: row.dataset.temFoto === 'true'
+      };
+    });
+  }
 
-    btnConcluirChecklist.addEventListener(
-      'click',
-      async () => {
-    
-        if (!window.VistoriaDB) {
-    
-          alert(
-            'Módulo do banco não carregado.'
-          );
-    
-          return;
-        }
-    
-        const confirmar =
-          confirm(
-            'Deseja concluir este checklist?\n\n' +
-            'Após a conclusão, a vistoria será marcada como finalizada.'
-          );
-    
-        if (!confirmar) {
-          return;
-        }
-    
-        await window
-          .VistoriaDB
-          .concluirVistoria();
-      }
-    );
+  function buildReport(filter = 'ALL') {
+    const meta = getMetadados();
+    const all = collectResponsesTela();
+    const filtrados = all.filter(item => filter === 'ALL' || item.status === filter);
 
+    const counts = { C: 0, NC: 0, NA: 0 };
+    all.forEach(item => {
+      counts[item.status] = (counts[item.status] || 0) + 1;
+    });
 
-  // =========================================================
-  // COLETAR RESPOSTAS
-  // =========================================================
+    reportMeta.innerHTML = `
+      <strong>Empresa:</strong> ${meta.empresa_nome}<br>
+      <strong>Responsável técnico:</strong> ${meta.responsavel_tecnico}<br>
+      <strong>Responsável pela auditoria:</strong> ${meta.responsavel_auditoria}<br>
+      <strong>Data:</strong> ${meta.data_auditoria} &nbsp; <strong>Horário:</strong> ${meta.horario}
+    `;
 
-  function collectResponses() {
+    reportSummary.innerHTML = `
+      <strong>Total:</strong> ${all.length} &nbsp;
+      <span class="status-C">C: ${counts.C}</span> &nbsp;
+      <span class="status-NC">N/C: ${counts.NC}</span> &nbsp;
+      <span class="status-NA">N/A: ${counts.NA}</span>
+    `;
 
-    const rows =
-      document.querySelectorAll(
-        '.item-row'
-      );
+    const porSetor = {};
+    filtrados.forEach(item => {
+      if (!porSetor[item.setor]) porSetor[item.setor] = [];
+      porSetor[item.setor].push(item);
+    });
 
+    reportList.innerHTML = '';
 
-    const out =
-      [];
+    Object.keys(porSetor)
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+      .forEach(setor => {
+        const bloco = document.createElement('div');
+        bloco.style.marginTop = '12px';
 
+        const titulo = document.createElement('h3');
+        titulo.textContent = setor;
+        bloco.appendChild(titulo);
 
-    rows.forEach(
-      row => {
+        const ul = document.createElement('ul');
 
-        const setor =
-          row.dataset.setor || '';
-
-        const item =
-          row.dataset.item || '';
-
-        const localId =
-          row.dataset.localId || '';
-
-        const itemId =
-          row.dataset.itemId || '';
-
-
-        const marcado =
-          row.querySelector(
-            'input[type="radio"]:checked'
-          );
-
-
-        const status =
-          marcado
-            ? marcado.value
-            : 'C';
-
-
-        const textarea =
-          row.querySelector(
-            'textarea.obs'
-          );
-
-
-        const obs =
-          textarea
-            ? textarea.value.trim()
-            : '';
-
-
-        const photo =
-          row.dataset.temFoto ===
-          'true';
-
-
-        out.push({
-
-          setor,
-
-          item,
-
-          local_id:
-            localId,
-
-          item_id:
-            itemId,
-
-          status,
-
-          obs,
-
-          photo
+        porSetor[setor].forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `${item.item} — ${item.status}${item.obs ? ' — ' + item.obs : ''}${item.photo ? ' — Foto: sim' : ''}`;
+          ul.appendChild(li);
         });
-      }
-    );
 
+        bloco.appendChild(ul);
+        reportList.appendChild(bloco);
+      });
 
-    return out;
+    report.style.display = 'block';
   }
 
-
-  // =========================================================
-  // RELATÓRIO
-  // =========================================================
-
-  function buildReport(
-    filter = 'ALL'
-  ) {
-
-    const m =
-      getMetadados();
-
-
-    reportMeta.innerHTML =
-      `
-        <strong>Empresa:</strong> ${m.empresa_nome || ''} —
-        <strong>Responsável técnico:</strong> ${m.responsavel_tecnico || ''} —
-        <strong>Responsável pela auditoria:</strong> ${m.responsavel_auditoria || ''} —
-        <strong>Data:</strong> ${m.data_auditoria || ''} —
-        <strong>Horário:</strong> ${m.horario || ''}
-      `;
-
-
-    const all =
-      collectResponses();
-
-
-    const total =
-      all.length;
-
-
-    const counts = {
-      C: 0,
-      NC: 0,
-      NA: 0
-    };
-
-
-    all.forEach(
-      item => {
-
-        counts[
-          item.status
-        ] =
-          (
-            counts[
-              item.status
-            ] ||
-            0
-          ) +
-          1;
-      }
-    );
-
-
-    reportSummary.innerHTML =
-      `
-        <div>
-          <strong>Total de itens:</strong>
-          ${total}
-        </div>
-
-        <div style="margin-top:6px">
-
-          <strong>Resumo:</strong>
-
-          <span
-            style="margin-left:8px"
-            class="status-C"
-          >
-            C: ${counts.C}
-          </span>
-
-          <span
-            style="margin-left:10px"
-            class="status-NC"
-          >
-            N/C: ${counts.NC}
-          </span>
-
-          <span
-            style="margin-left:10px"
-            class="status-NA"
-          >
-            N/A: ${counts.NA}
-          </span>
-
-        </div>
-      `;
-
-
-    const bySetor =
-      {};
-
-
-    all.forEach(
-      item => {
-
-        if (
-          filter !== 'ALL' &&
-          item.status !==
-          filter
-        ) {
-          return;
-        }
-
-
-        if (
-          !bySetor[
-            item.setor
-          ]
-        ) {
-
-          bySetor[
-            item.setor
-          ] =
-            [];
-        }
-
-
-        bySetor[
-          item.setor
-        ].push(
-          item
-        );
-      }
-    );
-
-
-    reportList.innerHTML =
-      '';
-
-
-    Object
-      .keys(
-        bySetor
-      )
-      .sort(
-        (a, b) =>
-          a.localeCompare(
-            b,
-            'pt-BR',
-            {
-              sensitivity:
-                'base'
-            }
-          )
-      )
-      .forEach(
-        setor => {
-
-          const sdiv =
-            document.createElement(
-              'div'
-            );
-
-          sdiv.style.marginTop =
-            '10px';
-
-
-          const titulo =
-            document.createElement(
-              'h3'
-            );
-
-          titulo.style.margin =
-            '6px 0';
-
-          titulo.textContent =
-            `${setor} (${bySetor[setor].length})`;
-
-          sdiv.appendChild(
-            titulo
-          );
-
-
-          const ul =
-            document.createElement(
-              'ul'
-            );
-
-
-          bySetor[
-            setor
-          ].forEach(
-            item => {
-
-              const li =
-                document.createElement(
-                  'li'
-                );
-
-
-              const strong =
-                document.createElement(
-                  'strong'
-                );
-
-              strong.textContent =
-                item.item;
-
-              li.appendChild(
-                strong
-              );
-
-
-              li.appendChild(
-                document.createTextNode(
-                  ' — '
-                )
-              );
-
-
-              const status =
-                document.createElement(
-                  'span'
-                );
-
-              status.className =
-                `status-${item.status}`;
-
-              status.textContent =
-                item.status;
-
-              li.appendChild(
-                status
-              );
-
-
-              if (item.obs) {
-
-                li.appendChild(
-                  document.createTextNode(
-                    ` — Observação: ${item.obs}`
-                  )
-                );
-              }
-
-
-              if (item.photo) {
-
-                li.appendChild(
-                  document.createTextNode(
-                    ' — Foto: sim'
-                  )
-                );
-              }
-
-
-              ul.appendChild(
-                li
-              );
-            }
-          );
-
-
-          sdiv.appendChild(
-            ul
-          );
-
-          reportList.appendChild(
-            sdiv
-          );
-        }
-      );
-
-
-    const hasItems =
-      Object
-        .keys(
-          bySetor
-        )
-        .some(
-          setor =>
-            bySetor[
-              setor
-            ].length >
-            0
-        );
-
-
-    btnDownloadCsv.disabled =
-      !hasItems;
-
-
-    report.style.display =
-      'block';
-  }
-
-
-  btnView.addEventListener(
-    'click',
-    () => {
-
-      buildReport(
-        reportFilter.value
-      );
+  btnView.addEventListener('click', () => {
+    buildReport(reportFilter.value);
+  });
+
+  reportFilter.addEventListener('change', () => {
+    if (report.style.display !== 'none') {
+      buildReport(reportFilter.value);
     }
-  );
+  });
 
-
-  reportFilter.addEventListener(
-    'change',
-    () => {
-
-      buildReport(
-        reportFilter.value
-      );
-    }
-  );
-
-
-  btnJustNc.addEventListener(
-    'click',
-    () => {
-
-      reportFilter.value =
-        'NC';
-
-      buildReport(
-        'NC'
-      );
-    }
-  );
-
-
-  // =========================================================
-  // VALIDAÇÃO CSV
-  // =========================================================
-
-  function validateBeforeCSV(
-    rows
-  ) {
-
-    const missing =
-      [];
-
-
-    rows.forEach(
-      (r, i) => {
-
-        if (
-          r.status === 'NC' &&
-          (
-            !r.obs ||
-            r.obs.length <
-            3
-          )
-        ) {
-
-          missing.push({
-
-            index:
-              i,
-
-            setor:
-              r.setor,
-
-            item:
-              r.item
-          });
-        }
-      }
-    );
-
-
-    return missing;
+  function carregarScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error(`Não foi possível carregar ${src}`));
+      document.body.appendChild(script);
+    });
   }
-
-
-  // =========================================================
-  // CSV
-  // =========================================================
-
-  function toCSV(rows) {
-
-    const meta =
-      getMetadados();
-
-
-    const header = [
-      'Empresa',
-      'ResponsavelTecnico',
-      'ResponsavelAuditoria',
-      'Data',
-      'Horario',
-      'Setor',
-      'Item',
-      'Status',
-      'Observacao',
-      'Foto'
-    ];
-
-
-    const lines = [
-      header.join(',')
-    ];
-
-
-    const esc =
-      txt =>
-        `"${String(txt || '').replace(/"/g, '""')}"`;
-
-
-    rows.forEach(
-      r => {
-
-        lines.push(
-          [
-            esc(
-              meta.empresa_nome
-            ),
-
-            esc(
-              meta.responsavel_tecnico
-            ),
-
-            esc(
-              meta.responsavel_auditoria
-            ),
-
-            esc(
-              meta.data_auditoria
-            ),
-
-            esc(
-              meta.horario
-            ),
-
-            esc(
-              r.setor
-            ),
-
-            esc(
-              r.item
-            ),
-
-            esc(
-              r.status
-            ),
-
-            esc(
-              r.obs
-            ),
-
-            r.photo
-              ? 'TRUE'
-              : 'FALSE'
-          ].join(',')
-        );
-      }
-    );
-
-
-    return lines.join(
-      '\n'
-    );
-  }
-
-
-  btnDownloadCsv.addEventListener(
-    'click',
-    () => {
-
-      const filter =
-        reportFilter.value;
-
-
-      const all =
-        collectResponses();
-
-
-      const rows =
-        all.filter(
-          r =>
-            filter === 'ALL'
-              ? true
-              : r.status ===
-                filter
-        );
-
-
-      const missing =
-        validateBeforeCSV(
-          rows
-        );
-
-
-      if (
-        missing.length >
-        0
-      ) {
-
-        const msg =
-          `Existem ${missing.length} item(s) marcado(s) como N/C sem observação (mínimo 3 caracteres).\n\n` +
-          `Por favor preencha as observações antes de gerar o CSV.\n\n` +
-          `Exemplo: ${missing[0].setor} — ${missing[0].item}`;
-
-
-        alert(
-          msg
-        );
-
-
-        const targetRow =
-          Array
-            .from(
-              document.querySelectorAll(
-                '.item-row'
-              )
-            )
-            .find(
-              row =>
-                row.dataset.setor ===
-                  missing[0].setor &&
-                row.dataset.item ===
-                  missing[0].item
-            );
-
-
-        if (targetRow) {
-
-          const ta =
-            targetRow.querySelector(
-              'textarea.obs'
-            );
-
-
-          if (ta) {
-
-            ta.style.display =
-              'block';
-
-            ta.focus();
-          }
-        }
-
-
-        return;
-      }
-
-
-      if (!rows.length) {
-
-        alert(
-          'Não há itens no filtro selecionado.'
-        );
-
-        return;
-      }
-
-
-      const csv =
-        toCSV(
-          rows
-        );
-
-
-      const blob =
-        new Blob(
-          [
-            csv
-          ],
-          {
-            type:
-              'text/csv;charset=utf-8;'
-          }
-        );
-
-
-      const url =
-        URL.createObjectURL(
-          blob
-        );
-
-
-      const a =
-        document.createElement(
-          'a'
-        );
-
-
-      const now =
-        new Date();
-
-
-      const stamp =
-        now
-          .toISOString()
-          .slice(
-            0,
-            19
-          )
-          .replace(
-            /[:T]/g,
-            '-'
-          );
-
-
-      a.href =
-        url;
-
-      a.download =
-        `relatorio_vistoria_${stamp}.csv`;
-
-
-      document.body.appendChild(
-        a
-      );
-
-
-      a.click();
-
-      a.remove();
-
-
-      URL.revokeObjectURL(
-        url
-      );
-    }
-  );
-
-
-  // =========================================================
-  // CARREGAR SCRIPTS APÓS A TELA ESTAR MONTADA
-  // Isso mantém persist.js e speech.js funcionando com
-  // os itens carregados dinamicamente.
-  // =========================================================
-
-  function carregarScript(
-    src
-  ) {
-
-    return new Promise(
-      (
-        resolve,
-        reject
-      ) => {
-
-        const script =
-          document.createElement(
-            'script'
-          );
-
-        script.src =
-          src;
-
-        script.onload =
-          resolve;
-
-        script.onerror =
-          () =>
-            reject(
-              new Error(
-                `Não foi possível carregar ${src}`
-              )
-            );
-
-
-        document.body.appendChild(
-          script
-        );
-      }
-    );
-  }
-
-
-  // =========================================================
-  // INICIALIZAÇÃO
-  // =========================================================
 
   async function iniciarAplicacao() {
-
     try {
-
       await carregarModeloChecklist();
 
+      await carregarScript('persist.js?v=12');
+      await carregarScript('speech.js?v=12');
+      await carregarScript('db-v8.js?v=12');
+      await carregarScript('photo.js?v=12');
 
-      // Carrega depois que as 309 linhas já existem no DOM.
-      // Isso evita perder voz/persistência na renderização assíncrona.
+      btnSalvarMeta.addEventListener('click', async () => {
+        if (!window.VistoriaDB) {
+          alert('Módulo do banco não carregado.');
+          return;
+        }
 
-      await carregarScript(
-        'persist.js?v=11'
-      );
+        await window.VistoriaDB.salvarVistoria();
+      });
 
-      await carregarScript(
-        'speech.js?v=11'
-      );
+      btnConcluirChecklist.addEventListener('click', async () => {
+        if (!window.VistoriaDB) {
+          alert('Módulo do banco não carregado.');
+          return;
+        }
 
-      await carregarScript(
-        'db-v8.js?v=11'
-      );
+        const confirmar = confirm(
+          'Deseja concluir este checklist?\n\nApós a conclusão, a vistoria será marcada como finalizada.'
+        );
 
-      await carregarScript(
-        'photo.js?v=11'
-      );
+        if (!confirmar) return;
 
+        await window.VistoriaDB.concluirVistoria();
+      });
 
-      console.log(
-        'Checklist inicializado com dados do Supabase.'
-      );
-
-
+      console.log('Checklist inicializado com dados do Supabase.');
     } catch (erro) {
+      console.error('Erro ao iniciar checklist:', erro);
 
-      console.error(
-        'Erro ao iniciar checklist:',
-        erro
-      );
+      checklistEl.innerHTML = `
+        <div style="padding:16px;margin:12px;border:1px solid #e3a6a6;border-radius:8px;background:#fff1f1;color:#a11;">
+          Não foi possível carregar o checklist.<br><br>
+          ${String(erro.message || erro)}
+        </div>
+      `;
 
-
-      checklistEl.innerHTML =
-        `
-          <div
-            style="
-              padding:16px;
-              margin:12px;
-              border:1px solid #e3a6a6;
-              border-radius:8px;
-              background:#fff1f1;
-              color:#a11;
-            "
-          >
-            Não foi possível carregar o checklist.<br><br>
-            ${String(
-              erro.message ||
-              erro
-            )}
-          </div>
-        `;
-
-
-      selectLocal.innerHTML =
-        '<option value="ALL">Erro ao carregar locais</option>';
-
-      selectLocal.disabled =
-        true;
+      selectLocal.innerHTML = '<option value="ALL">Erro ao carregar locais</option>';
+      selectLocal.disabled = true;
     }
   }
 
-
   iniciarAplicacao();
-
 })();
-
 </script>
 
 </body>
