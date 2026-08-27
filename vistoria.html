@@ -40,13 +40,15 @@
       <input id="meta-horario" type="text" readonly />
     </label>
 
-    <button class="btn-save" id="btn-salvar-meta" type="button">
-      Salvar
-    </button>
+    <div class="meta-actions">
+      <button class="btn-save" id="btn-salvar-meta" type="button">
+        Salvar
+      </button>
 
-    <button class="btn" id="btn-concluir-checklist" type="button">
-      Concluir Checklist
-    </button>
+      <button class="btn" id="btn-concluir-checklist" type="button">
+        Concluir Checklist
+      </button>
+    </div>
   </div>
 
   <div class="controls-top">
@@ -61,43 +63,15 @@
     <div style="padding:16px;text-align:center;">Carregando checklist...</div>
   </div>
 
-  <div class="controls">
-    <button class="btn" id="btn-view-report" type="button">
-      Visualizar Relatório
-    </button>
-
-    <div class="filter small">
-      <label for="report-filter">Filtrar por status:</label>
-      <select id="report-filter">
-        <option value="ALL">Todos</option>
-        <option value="C">C (Correto)</option>
-        <option value="NC">N/C (Não Conforme)</option>
-        <option value="NA">N/A</option>
-      </select>
-    </div>
-  </div>
-
-  <div id="report" class="report-box" style="display:none;">
-    <div id="report-meta"></div>
-    <div id="report-summary" style="margin-top:8px;"></div>
-    <div id="report-list"></div>
-  </div>
-
 <script>
 (function () {
   const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjZc7CswobVg_0BlBfRSd';
 
   const selectLocal = document.getElementById('select-local');
   const checklistEl = document.getElementById('checklist');
   const btnSalvarMeta = document.getElementById('btn-salvar-meta');
   const btnConcluirChecklist = document.getElementById('btn-concluir-checklist');
-  const btnView = document.getElementById('btn-view-report');
-  const report = document.getElementById('report');
-  const reportMeta = document.getElementById('report-meta');
-  const reportSummary = document.getElementById('report-summary');
-  const reportList = document.getElementById('report-list');
-  const reportFilter = document.getElementById('report-filter');
 
   let initialData = [];
 
@@ -321,98 +295,6 @@
     showLocal(selectLocal.value);
   });
 
-  function getMetadados() {
-    return {
-      empresa_nome: document.getElementById('meta-empresa-nome')?.value.trim() || '',
-      responsavel_tecnico: document.getElementById('meta-responsavel-tecnico')?.value.trim() || '',
-      responsavel_auditoria: document.getElementById('meta-responsavel-auditoria')?.value.trim() || '',
-      data_auditoria: document.getElementById('meta-data-auditoria')?.value || '',
-      horario: document.getElementById('meta-horario')?.value.trim() || ''
-    };
-  }
-
-  function collectResponsesTela() {
-    return Array.from(document.querySelectorAll('.item-row')).map(row => {
-      const marcado = row.querySelector('input[type="radio"]:checked');
-      const textarea = row.querySelector('textarea.obs');
-
-      return {
-        setor: row.dataset.setor || '',
-        item: row.dataset.item || '',
-        status: marcado ? marcado.value : 'C',
-        obs: textarea ? textarea.value.trim() : '',
-        photo: row.dataset.temFoto === 'true'
-      };
-    });
-  }
-
-  function buildReport(filter = 'ALL') {
-    const meta = getMetadados();
-    const all = collectResponsesTela();
-    const filtrados = all.filter(item => filter === 'ALL' || item.status === filter);
-
-    const counts = { C: 0, NC: 0, NA: 0 };
-    all.forEach(item => {
-      counts[item.status] = (counts[item.status] || 0) + 1;
-    });
-
-    reportMeta.innerHTML = `
-      <strong>Empresa:</strong> ${meta.empresa_nome}<br>
-      <strong>Responsável técnico:</strong> ${meta.responsavel_tecnico}<br>
-      <strong>Responsável pela auditoria:</strong> ${meta.responsavel_auditoria}<br>
-      <strong>Data:</strong> ${meta.data_auditoria} &nbsp; <strong>Horário:</strong> ${meta.horario}
-    `;
-
-    reportSummary.innerHTML = `
-      <strong>Total:</strong> ${all.length} &nbsp;
-      <span class="status-C">C: ${counts.C}</span> &nbsp;
-      <span class="status-NC">N/C: ${counts.NC}</span> &nbsp;
-      <span class="status-NA">N/A: ${counts.NA}</span>
-    `;
-
-    const porSetor = {};
-    filtrados.forEach(item => {
-      if (!porSetor[item.setor]) porSetor[item.setor] = [];
-      porSetor[item.setor].push(item);
-    });
-
-    reportList.innerHTML = '';
-
-    Object.keys(porSetor)
-      .sort((a, b) => a.localeCompare(b, 'pt-BR'))
-      .forEach(setor => {
-        const bloco = document.createElement('div');
-        bloco.style.marginTop = '12px';
-
-        const titulo = document.createElement('h3');
-        titulo.textContent = setor;
-        bloco.appendChild(titulo);
-
-        const ul = document.createElement('ul');
-
-        porSetor[setor].forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = `${item.item} — ${item.status}${item.obs ? ' — ' + item.obs : ''}${item.photo ? ' — Foto: sim' : ''}`;
-          ul.appendChild(li);
-        });
-
-        bloco.appendChild(ul);
-        reportList.appendChild(bloco);
-      });
-
-    report.style.display = 'block';
-  }
-
-  btnView.addEventListener('click', () => {
-    buildReport(reportFilter.value);
-  });
-
-  reportFilter.addEventListener('change', () => {
-    if (report.style.display !== 'none') {
-      buildReport(reportFilter.value);
-    }
-  });
-
   function carregarScript(src) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -427,10 +309,10 @@
     try {
       await carregarModeloChecklist();
 
-      await carregarScript('persist.js?v=12');
-      await carregarScript('speech.js?v=12');
-      await carregarScript('db-v8.js?v=12');
-      await carregarScript('photo.js?v=12');
+      await carregarScript('persist.js?v=13');
+      await carregarScript('speech.js?v=13');
+      await carregarScript('db-v8.js?v=13');
+      await carregarScript('photo.js?v=13');
 
       btnSalvarMeta.addEventListener('click', async () => {
         if (!window.VistoriaDB) {
