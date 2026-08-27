@@ -64,12 +64,20 @@
       />
     </label>
 
-    <button
+   <button
       class="btn-save"
       id="btn-salvar-meta"
       type="button"
     >
       Salvar
+    </button>
+    
+    <button
+      class="btn"
+      id="btn-concluir-checklist"
+      type="button"
+    >
+      Concluir Checklist
     </button>
 
   </div>
@@ -218,7 +226,10 @@
     document.getElementById(
       'btn-salvar-meta'
     );
-
+const btnConcluirChecklist =
+  document.getElementById(
+    'btn-concluir-checklist'
+  );
   const btnView =
     document.getElementById(
       'btn-view-report'
@@ -1035,27 +1046,34 @@
   // SALVAR
   // =========================================================
 
-  btnSalvarMeta.addEventListener(
-    'click',
-    async () => {
-
-      if (
-        !window.VistoriaDB
-      ) {
-
-        alert(
-          'Módulo do banco não carregado.'
-        );
-
-        return;
+    btnConcluirChecklist.addEventListener(
+      'click',
+      async () => {
+    
+        if (!window.VistoriaDB) {
+    
+          alert(
+            'Módulo do banco não carregado.'
+          );
+    
+          return;
+        }
+    
+        const confirmar =
+          confirm(
+            'Deseja concluir este checklist?\n\n' +
+            'Após a conclusão, a vistoria será marcada como finalizada.'
+          );
+    
+        if (!confirmar) {
+          return;
+        }
+    
+        await window
+          .VistoriaDB
+          .concluirVistoria();
       }
-
-
-      await window
-        .VistoriaDB
-        .salvarVistoria();
-    }
-  );
+    );
 
 
   // =========================================================
