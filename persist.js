@@ -4,423 +4,233 @@
 // =========================================================
 
 (function () {
+  const STORAGE_PREFIX = 'checklist_vistoria_local_v3_';
 
-  const STORAGE_KEY =
-    'checklist_vistoria_local_v2';
+  function getVistoriaId() {
+    const params = new URLSearchParams(window.location.search);
+    return (
+      params.get('vistoria_id') ||
+      localStorage.getItem('checklist_vistoria_id') ||
+      ''
+    );
+  }
 
-
-  // =======================================================
-  // METADADOS
-  // =======================================================
+  function getStorageKey() {
+    const id = getVistoriaId();
+    return id
+      ? STORAGE_PREFIX + id
+      : STORAGE_PREFIX + 'sem_id';
+  }
 
   function getMetadados() {
-
     return {
-
       empresa_id:
-        document.getElementById(
-          'meta-empresa-id'
-        )?.value || null,
-
+        document.getElementById('meta-empresa-id')?.value || null,
       empresa_nome:
-        document.getElementById(
-          'meta-empresa-nome'
-        )?.value.trim() || '',
-
+        document.getElementById('meta-empresa-nome')?.value.trim() || '',
       responsavel_tecnico:
-        document.getElementById(
-          'meta-responsavel-tecnico'
-        )?.value.trim() || '',
-
+        document.getElementById('meta-responsavel-tecnico')?.value.trim() || '',
       responsavel_auditoria:
-        document.getElementById(
-          'meta-responsavel-auditoria'
-        )?.value.trim() || '',
-
+        document.getElementById('meta-responsavel-auditoria')?.value.trim() || '',
       data_auditoria:
-        document.getElementById(
-          'meta-data-auditoria'
-        )?.value || '',
-
+        document.getElementById('meta-data-auditoria')?.value || '',
       horario:
-        document.getElementById(
-          'meta-horario'
-        )?.value.trim() || ''
+        document.getElementById('meta-horario')?.value.trim() || ''
     };
   }
-
 
   function setMetadados(meta) {
-
     if (!meta) return;
 
-
     const campos = {
-
-      'meta-empresa-id':
-        meta.empresa_id || '',
-
-      'meta-empresa-nome':
-        meta.empresa_nome || '',
-
-      'meta-responsavel-tecnico':
-        meta.responsavel_tecnico || '',
-
-      'meta-responsavel-auditoria':
-        meta.responsavel_auditoria || '',
-
-      'meta-data-auditoria':
-        meta.data_auditoria || '',
-
-      'meta-horario':
-        meta.horario || ''
+      'meta-empresa-id': meta.empresa_id || '',
+      'meta-empresa-nome': meta.empresa_nome || '',
+      'meta-responsavel-tecnico': meta.responsavel_tecnico || '',
+      'meta-responsavel-auditoria': meta.responsavel_auditoria || '',
+      'meta-data-auditoria': meta.data_auditoria || '',
+      'meta-horario': meta.horario || ''
     };
 
-
-    Object.keys(campos)
-      .forEach(id => {
-
-        const el =
-          document.getElementById(id);
-
-        if (el) {
-          el.value =
-            campos[id];
-        }
-      });
+    Object.entries(campos).forEach(([id, valor]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = valor;
+    });
   }
 
-   // =======================================================
-  // CARREGA CABEÇALHO
-  // =======================================================
-async function carregarDadosVistoria() {
+  async function carregarDadosVistoria() {
+    const vistoriaId = getVistoriaId();
+    if (!vistoriaId) return null;
 
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
+    const SUPABASE_URL =
+      'https://dbleblnwolbbxtscjxif.supabase.co';
+    const SUPABASE_KEY =
+      'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
 
-  const vistoriaId =
-    params.get(
-      'vistoria_id'
-    ) ||
-    localStorage.getItem(
-      'checklist_vistoria_id'
-    );
-
-
-  if (!vistoriaId) {
-    return;
-  }
-
-
-  const SUPABASE_URL =
-    'https://dbleblnwolbbxtscjxif.supabase.co';
-
-  const SUPABASE_KEY =
-    'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
-
-
-  try {
-
-    const resposta =
-      await fetch(
+    try {
+      const resposta = await fetch(
         `${SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=*`,
         {
           headers: {
-
-            apikey:
-              SUPABASE_KEY,
-
-            Authorization:
-              'Bearer ' +
-              SUPABASE_KEY
+            apikey: SUPABASE_KEY,
+            Authorization: 'Bearer ' + SUPABASE_KEY
           }
         }
       );
 
+      const texto = await resposta.text();
 
-    if (!resposta.ok) {
+      if (!resposta.ok) {
+        throw new Error(texto || 'Erro ao carregar vistoria.');
+      }
 
-      const texto =
-        await resposta.text();
+      const registros = texto ? JSON.parse(texto) : [];
 
-      throw new Error(
-        texto
+      if (!registros.length) {
+        throw new Error('Vistoria não encontrada.');
+      }
+
+      const vistoria = registros[0];
+
+      setMetadados({
+        empresa_id: vistoria.empresa_id,
+        empresa_nome: vistoria.empresa_nome,
+        responsavel_tecnico: vistoria.responsavel_tecnico,
+        responsavel_auditoria: vistoria.responsavel_auditoria,
+        data_auditoria: vistoria.data_auditoria,
+        horario: vistoria.horario
+      });
+
+      localStorage.setItem(
+        'checklist_vistoria_id',
+        vistoria.id
       );
+
+      return vistoria;
+    } catch (erro) {
+      console.error('Erro ao carregar vistoria:', erro);
+      alert('Não foi possível carregar os dados da vistoria.');
+      return null;
     }
-
-
-    const registros =
-      await resposta.json();
-
-
-    if (!registros.length) {
-
-      throw new Error(
-        'Vistoria não encontrada.'
-      );
-    }
-
-
-    const vistoria =
-      registros[0];
-
-
-    document
-      .getElementById(
-        'meta-empresa-id'
-      )
-      .value =
-        vistoria.empresa_id || '';
-
-
-    document
-      .getElementById(
-        'meta-empresa-nome'
-      )
-      .value =
-        vistoria.empresa_nome || '';
-
-
-    document
-      .getElementById(
-        'meta-responsavel-tecnico'
-      )
-      .value =
-        vistoria.responsavel_tecnico || '';
-
-
-    document
-      .getElementById(
-        'meta-responsavel-auditoria'
-      )
-      .value =
-        vistoria.responsavel_auditoria || '';
-
-
-    document
-      .getElementById(
-        'meta-data-auditoria'
-      )
-      .value =
-        vistoria.data_auditoria || '';
-
-
-    document
-      .getElementById(
-        'meta-horario'
-      )
-      .value =
-        vistoria.horario || '';
-
-
-    localStorage.setItem(
-      'checklist_vistoria_id',
-      vistoria.id
-    );
-
-
-    console.log(
-      'Dados da vistoria carregados:',
-      vistoria
-    );
-
-
-  } catch (erro) {
-
-    console.error(
-      'Erro ao carregar vistoria:',
-      erro
-    );
-
-    alert(
-      'Não foi possível carregar os dados da vistoria.'
-    );
   }
-}
-  
-  // =======================================================
-  // RESPOSTAS
-  // =======================================================
 
   function collectResponses() {
-
-    const rows =
-      document.querySelectorAll(
-        '.item-row'
+    return Array.from(
+      document.querySelectorAll('.item-row')
+    ).map(row => {
+      const marcado = row.querySelector(
+        'input[type="radio"]:checked'
       );
 
+      const textarea = row.querySelector(
+        'textarea.obs'
+      );
 
-    const out = [];
-
-
-    rows.forEach(row => {
-
-      const setor =
-        row.dataset.setor || '';
-
-      const item =
-        row.dataset.item || '';
-
-
-      const marcado =
-        row.querySelector(
-          'input[type="radio"]:checked'
-        );
-
-
-      const status =
-        marcado
-          ? marcado.value
-          : 'NA';
-
-
-      const textarea =
-        row.querySelector(
-          'textarea.obs'
-        );
-
-
-      const obs =
-        textarea
-          ? textarea.value.trim()
-          : '';
-
-
-      const foto =
-        row.querySelector(
-          'input[type="checkbox"]'
-        );
-
-
-      out.push({
-
-        setor,
-
-        item,
-
-        status,
-
-        obs,
-
-        photo:
-          foto
-            ? foto.checked
-            : false
-      });
+      return {
+        setor: row.dataset.setor || '',
+        item: row.dataset.item || '',
+        local_id: row.dataset.localId || '',
+        item_id: row.dataset.itemId || '',
+        status: marcado ? marcado.value : 'C',
+        obs: textarea ? textarea.value.trim() : '',
+        photo: row.dataset.temFoto === 'true'
+      };
     });
-
-
-    return out;
   }
 
+  function aplicarRespostaNaLinha(row, it) {
+    const radios = row.querySelectorAll(
+      'input[type="radio"]'
+    );
 
-  function restoreResponses(items) {
+    radios.forEach(radio => {
+      radio.checked = radio.value === it.status;
+    });
 
-    if (!Array.isArray(items)) {
-      return;
+    const textarea = row.querySelector(
+      'textarea.obs'
+    );
+
+    if (textarea) {
+      textarea.value = it.obs || '';
+      textarea.style.display =
+        it.status === 'NC' ? 'block' : 'none';
+
+      textarea.dispatchEvent(
+        new Event('input', { bubbles: true })
+      );
     }
 
+    if (it.photo) {
+      row.dataset.temFoto = 'true';
+    } else {
+      delete row.dataset.temFoto;
+    }
 
-    const rows =
-      Array.from(
-        document.querySelectorAll(
-          '.item-row'
-        )
+    const marcado = row.querySelector(
+      'input[type="radio"]:checked'
+    );
+
+    if (marcado) {
+      marcado.dispatchEvent(
+        new Event('change', { bubbles: true })
       );
+    }
+  }
 
+  function restoreResponses(items) {
+    if (!Array.isArray(items) || !items.length) {
+      return 0;
+    }
+
+    const rows = Array.from(
+      document.querySelectorAll('.item-row')
+    );
+
+    let restaurados = 0;
 
     items.forEach(it => {
+      const row = rows.find(r => {
+        if (
+          it.local_id &&
+          it.item_id &&
+          r.dataset.localId &&
+          r.dataset.itemId
+        ) {
+          return (
+            String(r.dataset.localId) === String(it.local_id) &&
+            String(r.dataset.itemId) === String(it.item_id)
+          );
+        }
 
-      const row =
-        rows.find(r =>
-          r.dataset.setor ===
-            it.setor &&
-          r.dataset.item ===
-            it.item
+        return (
+          r.dataset.setor === it.setor &&
+          r.dataset.item === it.item
         );
-
+      });
 
       if (!row) return;
 
-
-      const radios =
-        row.querySelectorAll(
-          'input[type="radio"]'
-        );
-
-
-      radios.forEach(r => {
-
-        r.checked =
-          r.value === it.status;
-      });
-
-
-      const textarea =
-        row.querySelector(
-          'textarea.obs'
-        );
-
-
-      if (textarea) {
-
-        textarea.value =
-          it.obs || '';
-
-
-        textarea.style.display =
-          it.status === 'NC'
-            ? 'block'
-            : 'none';
-      }
-
-
-      const foto =
-        row.querySelector(
-          'input[type="checkbox"]'
-        );
-
-
-      if (foto) {
-
-        foto.checked =
-          !!it.photo;
-      }
+      aplicarRespostaNaLinha(row, it);
+      restaurados++;
     });
+
+    return restaurados;
   }
 
-
-  // =======================================================
-  // SALVAR LOCAL
-  // =======================================================
-
   function saveAll() {
-
     const payload = {
-
-      meta:
-        getMetadados(),
-
-      items:
-        collectResponses(),
-
-      salvo_em:
-        new Date()
-          .toISOString()
+      vistoria_id: getVistoriaId() || null,
+      meta: getMetadados(),
+      items: collectResponses(),
+      salvo_em: new Date().toISOString()
     };
 
-
     try {
-
       localStorage.setItem(
-        STORAGE_KEY,
+        getStorageKey(),
         JSON.stringify(payload)
       );
-
     } catch (erro) {
-
       console.error(
         'Erro ao salvar localmente:',
         erro
@@ -428,149 +238,116 @@ async function carregarDadosVistoria() {
     }
   }
 
-
-  // =======================================================
-  // CARREGAR LOCAL
-  // =======================================================
-
   function loadAll() {
+    const raw = localStorage.getItem(
+      getStorageKey()
+    );
 
-    const raw =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
-
-
-    if (!raw) {
-      return null;
-    }
-
+    if (!raw) return null;
 
     try {
-
       return JSON.parse(raw);
-
     } catch (erro) {
-
       console.error(
         'Erro ao carregar dados locais:',
         erro
       );
-
       return null;
     }
   }
 
+  function clearCurrent() {
+    localStorage.removeItem(
+      getStorageKey()
+    );
+  }
 
-  // =======================================================
-  // AUTOSAVE
-  // =======================================================
+  function esperarChecklistPronto(
+    timeoutMs = 10000
+  ) {
+    return new Promise(resolve => {
+      const inicio = Date.now();
+
+      function verificar() {
+        const rows = document.querySelectorAll(
+          '.item-row'
+        );
+
+        if (rows.length) {
+          resolve(true);
+          return;
+        }
+
+        if (Date.now() - inicio >= timeoutMs) {
+          resolve(false);
+          return;
+        }
+
+        setTimeout(verificar, 100);
+      }
+
+      verificar();
+    });
+  }
 
   function attachAutoSave() {
-
     const ids = [
-
       'meta-empresa-id',
-
       'meta-empresa-nome',
-
       'meta-responsavel-tecnico',
-
       'meta-responsavel-auditoria',
-
       'meta-data-auditoria',
-
       'meta-horario'
     ];
 
-
     ids.forEach(id => {
-
-      const el =
-        document.getElementById(id);
-
-
+      const el = document.getElementById(id);
       if (!el) return;
 
-
-      el.addEventListener(
-        'input',
-        saveAll
-      );
-
-
-      el.addEventListener(
-        'change',
-        saveAll
-      );
+      el.addEventListener('input', saveAll);
+      el.addEventListener('change', saveAll);
     });
 
+    function agendarSave() {
+      clearTimeout(
+        window._persist_debounce
+      );
+
+      window._persist_debounce =
+        setTimeout(saveAll, 250);
+    }
 
     document.addEventListener(
       'change',
-      function (event) {
-
-        const target =
-          event.target;
-
-
-        if (!target) return;
-
+      event => {
+        const target = event.target;
 
         if (
+          target &&
           target.matches(
-            '.item-row input[type="radio"],' +
-            '.item-row input[type="checkbox"],' +
-            '.item-row textarea'
+            '.item-row input[type="radio"], .item-row textarea'
           )
         ) {
-
-          clearTimeout(
-            window
-              ._persist_debounce
-          );
-
-
-          window
-            ._persist_debounce =
-              setTimeout(
-                saveAll,
-                250
-              );
+          agendarSave();
         }
       },
       true
     );
 
-
     document.addEventListener(
       'input',
-      function (event) {
-
+      event => {
         if (
           event.target &&
           event.target.matches(
             '.item-row textarea'
           )
         ) {
-
-          clearTimeout(
-            window
-              ._persist_debounce
-          );
-
-
-          window
-            ._persist_debounce =
-              setTimeout(
-                saveAll,
-                250
-              );
+          agendarSave();
         }
       },
       true
     );
-
 
     window.addEventListener(
       'beforeunload',
@@ -578,136 +355,13 @@ async function carregarDadosVistoria() {
     );
   }
 
-
-  // =======================================================
-  // INICIALIZAÇÃO
-  // =======================================================
-
-  async function init() {
-
-  const novaVistoria =
-    localStorage.getItem(
-      'checklist_nova_vistoria'
-    ) === 'true';
-
-
-  // =========================================
-  // NOVA VISTORIA
-  // =========================================
-
-  if (novaVistoria) {
-
-    // remove dados da vistoria anterior
-    localStorage.removeItem(
-      STORAGE_KEY
+  function preencherHorarioAutomatico() {
+    const campo = document.getElementById(
+      'meta-horario'
     );
 
+    if (!campo || campo.value) return;
 
-    // carrega os dados reais
-    // da vistoria recém-criada no Supabase
-    await carregarDadosVistoria();
-
-
-    // marca como já carregada
-    localStorage.removeItem(
-      'checklist_nova_vistoria'
-    );
-
-
-    console.log(
-      'Nova vistoria carregada do Supabase.'
-    );
-
-
-  } else {
-
-    // =======================================
-    // VISTORIA JÁ EXISTENTE / RECUPERAÇÃO
-    // =======================================
-
-    const stored =
-      loadAll();
-
-
-    if (stored) {
-
-      if (stored.meta) {
-
-        setMetadados(
-          stored.meta
-        );
-      }
-
-
-      if (stored.items) {
-
-        restoreResponses(
-          stored.items
-        );
-      }
-
-
-      console.log(
-        'Dados restaurados do localStorage.'
-      );
-
-    } else {
-
-      // sem dados locais:
-      // tenta carregar pelo vistoria_id
-      await carregarDadosVistoria();
-    }
-  }
-
-
-  attachAutoSave();
-}
-
-
-  if (
-    document.readyState ===
-    'loading'
-  ) {
-
-    document.addEventListener(
-      'DOMContentLoaded',
-      init
-    );
-
-  } else {
-
-    init();
-  }
-
-
-  // =======================================================
-  // API GLOBAL
-  // =======================================================
-
-  window.VistoriaPersist = {
-
-    saveAll,
-
-    loadAll,
-
-    getMetadados,
-
-    setMetadados,
-
-    collectResponses,
-
-    restoreResponses
-  };
-
-  // =======================================================
-  // HORA AUTOMÁTICA
-  // =======================================================
-function preencherHorarioAutomatico() {
-  const campo = document.getElementById('meta-horario');
-
-  if (!campo) return;
-
-  if (!campo.value) {
     const agora = new Date();
 
     const hora = String(
@@ -721,8 +375,68 @@ function preencherHorarioAutomatico() {
     campo.value =
       `Início ${hora}:${minuto}`;
   }
-}
 
-preencherHorarioAutomatico();
+  async function init() {
+    const novaVistoria =
+      localStorage.getItem(
+        'checklist_nova_vistoria'
+      ) === 'true';
+
+    if (novaVistoria) {
+      clearCurrent();
+      await carregarDadosVistoria();
+
+      localStorage.removeItem(
+        'checklist_nova_vistoria'
+      );
+    } else {
+      const stored = loadAll();
+
+      if (stored?.meta) {
+        setMetadados(stored.meta);
+      } else {
+        await carregarDadosVistoria();
+      }
+    }
+
+    preencherHorarioAutomatico();
+
+    const checklistPronto =
+      await esperarChecklistPronto();
+
+    if (checklistPronto) {
+      const stored = loadAll();
+
+      if (stored?.items) {
+        restoreResponses(
+          stored.items
+        );
+      }
+    }
+
+    attachAutoSave();
+    saveAll();
+  }
+
+  if (
+    document.readyState === 'loading'
+  ) {
+    document.addEventListener(
+      'DOMContentLoaded',
+      init
+    );
+  } else {
+    init();
+  }
+
+  window.VistoriaPersist = {
+    saveAll,
+    loadAll,
+    clearCurrent,
+    getStorageKey,
+    getMetadados,
+    setMetadados,
+    collectResponses,
+    restoreResponses
+  };
 })();
-
