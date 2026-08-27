@@ -839,6 +839,164 @@ async function salvarItens(
   }
 }
 
+  // =======================================================
+// CONCLUIR VISTORIA
+// =======================================================
+
+async function concluirVistoria() {
+
+  const botao =
+    document.getElementById(
+      'btn-concluir-checklist'
+    );
+
+
+  try {
+
+    if (botao) {
+
+      botao.disabled =
+        true;
+
+      botao.textContent =
+        'Concluindo...';
+    }
+
+
+    // Primeiro salva normalmente.
+    // Aqui já ocorre a validação dos
+    // campos e das observações N/C.
+
+    const vistoria =
+      await salvarVistoria();
+
+
+    if (!vistoria) {
+
+      return false;
+    }
+
+
+    const vistoriaId =
+      getVistoriaId();
+
+
+    if (!vistoriaId) {
+
+      throw new Error(
+        'ID da vistoria não encontrado.'
+      );
+    }
+
+
+    // =========================================
+    // ALTERAR STATUS PARA FINALIZADA
+    // =========================================
+
+    const resposta =
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}` +
+        `?id=eq.${encodeURIComponent(vistoriaId)}`,
+        {
+          method:
+            'PATCH',
+
+          headers:
+            getHeaders(
+              'return=representation'
+            ),
+
+          body:
+            JSON.stringify({
+              status:
+                'FINALIZADA',
+
+              atualizado_em:
+                new Date()
+                  .toISOString()
+            })
+        }
+      );
+
+
+    const texto =
+      await resposta.text();
+
+
+    if (!resposta.ok) {
+
+      throw new Error(
+        texto ||
+        'Não foi possível finalizar a vistoria.'
+      );
+    }
+
+
+    alert(
+      'Checklist concluído com sucesso.'
+    );
+
+
+    // limpa apenas o identificador
+    // da vistoria corrente
+
+    clearVistoriaId();
+
+
+    localStorage.removeItem(
+      'checklist_nova_vistoria'
+    );
+
+
+    // limpa os dados locais
+    // da vistoria já encerrada
+
+    localStorage.removeItem(
+      'checklist_vistoria_local_v2'
+    );
+
+
+    // volta para a página principal
+
+    window.location.href =
+      'index.html';
+
+
+    return true;
+
+
+  } catch (erro) {
+
+    console.error(
+      'Erro ao concluir checklist:',
+      erro
+    );
+
+
+    alert(
+      'Não foi possível concluir o checklist.\n\n' +
+      (
+        erro?.message ||
+        String(erro)
+      )
+    );
+
+
+    return false;
+
+
+  } finally {
+
+    if (botao) {
+
+      botao.disabled =
+        false;
+
+      botao.textContent =
+        'Concluir Checklist';
+    }
+  }
+}
 
   // =======================================================
   // NOVA VISTORIA
@@ -861,6 +1019,8 @@ async function salvarItens(
 window.VistoriaDB = {
 
   salvarVistoria,
+
+  concluirVistoria,
 
   salvarItens,
 
