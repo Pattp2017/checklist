@@ -257,9 +257,9 @@
         grid-template-columns: 1fr;
       }
 
-      .tabela-wrap {
-        display: none;
-      }
+.tabela-wrap {
+  display: none !important;
+}
 
       .cards-mobile {
         display: block;
@@ -810,7 +810,22 @@
 
     card.className =
       'card-mobile';
+const tituloEmpresa =
+  document.createElement(
+    'div'
+  );
 
+tituloEmpresa.style.fontSize =
+  '11px';
+
+tituloEmpresa.style.color =
+  '#9ca3af';
+
+tituloEmpresa.style.marginBottom =
+  '4px';
+
+tituloEmpresa.textContent =
+  'Empresa / Fazenda';
 
     const empresa =
       document.createElement(
@@ -862,9 +877,13 @@
       `;
 
 
-    card.appendChild(
-      empresa
-    );
+card.appendChild(
+  tituloEmpresa
+);
+
+card.appendChild(
+  empresa
+);
 
     card.appendChild(
       status
