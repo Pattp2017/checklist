@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklists</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+    .topo {
+      background: #fff;
+      border-bottom: 1px solid #d9dee5;
+      padding: 18px 20px;
+      position: relative;
+      text-align: center;
+    }
+    .topo h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #163a5f;
+    }
+    .voltar {
+      position: absolute;
+      left: 18px;
+      top: 13px;
+      border: 0;
+      background: transparent;
+      font-size: 26px;
+      color: #163a5f;
+      cursor: pointer;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+    .filtros {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .filtros label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .filtros input {
+      width: 100%;
+      height: 42px;
+      border: 1px solid #cbd2d9;
+      border-radius: 7px;
+      padding: 0 12px;
+      font-size: 15px;
+    }
+    .secao { margin-top: 24px; }
+    .secao h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #163a5f;
+    }
+    .lista {
+      display: grid;
+      gap: 10px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .empresa {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+    .meta {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+    .acoes {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      border: 0;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #163a5f;
+      color: #fff;
+    }
+    .btn-finalizada { background: #4b5563; }
+    .status {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-andamento {
+      background: #e8f1fb;
+      color: #145b8c;
+    }
+    .status-finalizada {
+      background: #e8ecef;
+      color: #374151;
+    }
+    .vazio, .erro, .carregando {
+      padding: 16px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #d9dee5;
+      color: #6b7280;
+    }
+    .erro {
+      color: #a11;
+      background: #fff1f1;
+      border-color: #e3a6a6;
+    }
+    @media (max-width: 620px) {
+      .card { grid-template-columns: 1fr; }
+      .acoes { justify-content: flex-start; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topo">
+    <button class="voltar" id="btn-voltar" type="button" aria-label="Voltar">‹</button>
+    <h1>Checklists</h1>
+  </header>
+
+  <main class="container">
+    <section class="filtros">
+      <label for="busca">Buscar empresa / fazenda</label>
+      <input id="busca" type="text" placeholder="Digite parte do nome..." autocomplete="off">
+    </section>
+
+    <section class="secao">
+      <h2>Em andamento</h2>
+      <div id="lista-andamento" class="lista">
+        <div class="carregando">Carregando checklists...</div>
+      </div>
+    </section>
+
+    <section class="secao">
+      <h2>Finalizadas</h2>
+      <div id="lista-finalizadas" class="lista">
+        <div class="carregando">Carregando checklists...</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const SUPABASE_URL =
+      'https://dbleblnwolbbxtscjxif.supabase.co';
+
+    const SUPABASE_KEY =
+      'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+
+    const listaAndamento = document.getElementById('lista-andamento');
+    const listaFinalizadas = document.getElementById('lista-finalizadas');
+    const buscaEl = document.getElementById('busca');
+
+    let vistorias = [];
+
+    document.getElementById('btn-voltar').addEventListener(
+      'click',
+      () => {
+        window.location.href = 'index.html';
+      }
+    );
+
+    function headers() {
+      return {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + SUPABASE_KEY,
+        Accept: 'application/json'
+      };
+    }
+
+    function normalizar(texto) {
+      return String(texto || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function formatarData(data) {
+      if (!data) return '';
+
+      const partes = String(data).split('-');
+
+      if (partes.length !== 3) {
+        return data;
+      }
+
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    function criarCard(vistoria) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const info = document.createElement('div');
+
+      const empresa = document.createElement('div');
+      empresa.className = 'empresa';
+      empresa.textContent =
+        vistoria.empresa_nome || 'Empresa não informada';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+
+      const data = formatarData(vistoria.data_auditoria);
+
+      meta.textContent = [
+        data ? `Data: ${data}` : '',
+        vistoria.horario ? `Horário: ${vistoria.horario}` : '',
+        vistoria.responsavel_auditoria
+          ? `Auditoria: ${vistoria.responsavel_auditoria}`
+          : ''
+      ]
+        .filter(Boolean)
+        .join(' • ');
+
+      const status = document.createElement('span');
+
+      status.className =
+        'status ' +
+        (
+          vistoria.status === 'FINALIZADA'
+            ? 'status-finalizada'
+            : 'status-andamento'
+        );
+
+      status.textContent =
+        vistoria.status === 'FINALIZADA'
+          ? 'Finalizada'
+          : 'Em andamento';
+
+      info.appendChild(empresa);
+      info.appendChild(meta);
+      info.appendChild(status);
+
+      const acoes = document.createElement('div');
+      acoes.className = 'acoes';
+
+      const btnAbrir = document.createElement('button');
+      btnAbrir.type = 'button';
+
+      btnAbrir.className =
+        'btn' +
+        (
+          vistoria.status === 'FINALIZADA'
+            ? ' btn-finalizada'
+            : ''
+        );
+
+      btnAbrir.textContent =
+        vistoria.status === 'FINALIZADA'
+          ? 'Abrir'
+          : 'Continuar';
+
+      btnAbrir.addEventListener(
+        'click',
+        () => {
+          localStorage.setItem(
+            'checklist_vistoria_id',
+            vistoria.id
+          );
+
+          localStorage.removeItem(
+            'checklist_nova_vistoria'
+          );
+
+          const modo =
+            vistoria.status === 'FINALIZADA'
+              ? '&modo=leitura'
+              : '';
+
+          window.location.href =
+            `vistoria.html?vistoria_id=${encodeURIComponent(vistoria.id)}${modo}`;
+        }
+      );
+
+      acoes.appendChild(btnAbrir);
+
+      card.appendChild(info);
+      card.appendChild(acoes);
+
+      return card;
+    }
+
+    function renderizar() {
+      const termo = normalizar(buscaEl.value);
+
+      const filtradas =
+        vistorias.filter(
+          vistoria =>
+            !termo ||
+            normalizar(vistoria.empresa_nome).includes(termo)
+        );
+
+      const andamento =
+        filtradas.filter(
+          vistoria =>
+            vistoria.status === 'EM_ANDAMENTO'
+        );
+
+      const finalizadas =
+        filtradas.filter(
+          vistoria =>
+            vistoria.status === 'FINALIZADA'
+        );
+
+      listaAndamento.innerHTML = '';
+
+      if (!andamento.length) {
+        listaAndamento.innerHTML =
+          '<div class="vazio">Nenhum checklist em andamento.</div>';
+      } else {
+        andamento.forEach(
+          vistoria =>
+            listaAndamento.appendChild(
+              criarCard(vistoria)
+            )
+        );
+      }
+
+      listaFinalizadas.innerHTML = '';
+
+      if (!finalizadas.length) {
+        listaFinalizadas.innerHTML =
+          '<div class="vazio">Nenhum checklist finalizado.</div>';
+      } else {
+        finalizadas.forEach(
+          vistoria =>
+            listaFinalizadas.appendChild(
+              criarCard(vistoria)
+            )
+        );
+      }
+    }
+
+    async function carregarVistorias() {
+      try {
+        const resposta =
+          await fetch(
+            `${SUPABASE_URL}/rest/v1/checklist_vistorias` +
+            `?select=id,empresa_id,empresa_nome,responsavel_tecnico,responsavel_auditoria,data_auditoria,horario,status,criado_em,atualizado_em` +
+            `&order=data_auditoria.desc` +
+            `&order=criado_em.desc`,
+            {
+              headers: headers()
+            }
+          );
+
+        const texto = await resposta.text();
+
+        if (!resposta.ok) {
+          throw new Error(
+            texto ||
+            'Erro ao consultar checklists.'
+          );
+        }
+
+        vistorias =
+          texto
+            ? JSON.parse(texto)
+            : [];
+
+        renderizar();
+
+      } catch (erro) {
+        console.error(
+          'Erro ao carregar checklists:',
+          erro
+        );
+
+        const mensagem =
+          erro?.message ||
+          String(erro);
+
+        listaAndamento.innerHTML =
+          `<div class="erro">Não foi possível carregar os checklists.<br><br>${mensagem}</div>`;
+
+        listaFinalizadas.innerHTML = '';
+      }
+    }
+
+    buscaEl.addEventListener(
+      'input',
+      renderizar
+    );
+
+    carregarVistorias();
+  </script>
+
+</body>
+</html>
