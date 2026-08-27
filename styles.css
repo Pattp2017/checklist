@@ -49,6 +49,12 @@ h1 {
   font-size: 14px;
 }
 
+.meta-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .btn-save {
   background: var(--primary);
   color: #fff;
@@ -56,6 +62,7 @@ h1 {
   padding: 8px 10px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 15px;
 }
 
 /* ===== CONTROLES TOPO ===== */
@@ -197,29 +204,7 @@ textarea.obs.obs-required::placeholder {
 .btn.secondary { background: #4b5563; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ===== CONTROLES RODAPÉ ===== */
-.controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin: 12px 0;
-  flex-wrap: wrap;
-}
-
-/* ===== RELATÓRIO ===== */
-.report-box {
-  background: var(--card);
-  padding: 12px;
-  border: 1px solid #dfeaf3;
-  border-radius: 8px;
-}
-
-.status-C { color: var(--success); font-weight: 700; }
-.status-NC { color: var(--danger); font-weight: 700; }
-.status-NA { color: #666; font-weight: 700; }
-
 /* ===== MISC ===== */
-.filter { display: flex; gap: 8px; align-items: center; }
 .small { font-size: 13px; color: var(--muted); }
 ul { margin: 6px 0 12px 18px; }
 
@@ -295,15 +280,6 @@ ul { margin: 6px 0 12px 18px; }
     flex-direction: column;
     align-items: flex-start;
   }
-
-  .btn {
-    width: 100%;
-  }
-
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
 }
 
 /* =========================================================
@@ -320,6 +296,23 @@ ul { margin: 6px 0 12px 18px; }
     min-width: 0;
     padding: 7px 8px;
     font-size: 14px;
+  }
+
+  .meta-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .meta-actions .btn-save,
+  .meta-actions .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 6px;
+    font-size: 14px;
+    white-space: nowrap;
   }
 
   .speech-controls {
