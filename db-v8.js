@@ -1,10 +1,9 @@
 // =========================================================
-// db.js
+// db-v8.js
 // Integração do Checklist com Supabase
 // =========================================================
 
 (function () {
-
   const SUPABASE_URL =
     'https://dbleblnwolbbxtscjxif.supabase.co';
 
@@ -16,14 +15,13 @@
 
   const TABELA_ITENS =
     'checklist_itens';
+
   const BUCKET_FOTOS =
     'checklist-fotos';
 
-  // =======================================================
-  // HEADERS
-  // =======================================================
-
-  function getHeaders(prefer = 'return=representation') {
+  function getHeaders(
+    prefer = 'return=representation'
+  ) {
     return {
       apikey: SUPABASE_KEY,
       Authorization:
@@ -33,19 +31,20 @@
     };
   }
 
-
-  // =======================================================
-  // ID DA VISTORIA
-  // =======================================================
-
   function getVistoriaId() {
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
     return (
+      params.get('vistoria_id') ||
       localStorage.getItem(
         'checklist_vistoria_id'
-      ) || null
+      ) ||
+      null
     );
   }
-
 
   function setVistoriaId(id) {
     if (!id) return;
@@ -56,22 +55,14 @@
     );
   }
 
-
   function clearVistoriaId() {
     localStorage.removeItem(
       'checklist_vistoria_id'
     );
   }
 
-
-  // =======================================================
-  // DADOS DA VISTORIA
-  // =======================================================
-
   function getDadosFormulario() {
-
     return {
-
       empresa_id:
         document.getElementById(
           'meta-empresa-id'
@@ -107,13 +98,7 @@
     };
   }
 
-
-  // =======================================================
-  // VALIDAÇÃO
-  // =======================================================
-
   function validar(dados) {
-
     if (!dados.empresa_nome) {
       alert('Informe a empresa.');
       return false;
@@ -136,103 +121,71 @@
     return true;
   }
 
-
-  // =======================================================
-  // CRIAR VISTORIA
-  // =======================================================
-
   async function criarVistoria(dados) {
-
-    const resposta =
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}`,
-        {
-          method: 'POST',
-          headers: getHeaders(),
-          body: JSON.stringify(dados)
-        }
-      );
-
+    const resposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(dados)
+      }
+    );
 
     const texto =
       await resposta.text();
 
-
     if (!resposta.ok) {
-
-      console.error(
-        'Erro ao criar vistoria:',
-        resposta.status,
-        texto
+      throw new Error(
+        texto ||
+        'Erro ao criar vistoria.'
       );
-
-      throw new Error(texto);
     }
 
-
     const registros =
-      JSON.parse(texto);
+      texto ? JSON.parse(texto) : [];
 
-
-    if (!registros?.length) {
+    if (!registros.length) {
       throw new Error(
         'Supabase não retornou a vistoria criada.'
       );
     }
 
-
     const vistoria =
       registros[0];
-
 
     setVistoriaId(
       vistoria.id
     );
 
-
     return vistoria;
   }
-
-
-  // =======================================================
-  // ATUALIZAR VISTORIA
-  // =======================================================
 
   async function atualizarVistoria(
     id,
     dados
   ) {
-
-    const resposta =
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}?id=eq.${encodeURIComponent(id)}`,
-        {
-          method: 'PATCH',
-          headers: getHeaders(),
-          body: JSON.stringify({
-            ...dados,
-            atualizado_em:
-              new Date().toISOString()
-          })
-        }
-      );
-
+    const resposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}?id=eq.${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          ...dados,
+          atualizado_em:
+            new Date().toISOString()
+        })
+      }
+    );
 
     const texto =
       await resposta.text();
 
-
     if (!resposta.ok) {
-
-      console.error(
-        'Erro ao atualizar vistoria:',
-        resposta.status,
-        texto
+      throw new Error(
+        texto ||
+        'Erro ao atualizar vistoria.'
       );
-
-      throw new Error(texto);
     }
-
 
     if (!texto) {
       return {
@@ -241,10 +194,8 @@
       };
     }
 
-
     const registros =
       JSON.parse(texto);
-
 
     return (
       registros[0] || {
@@ -254,35 +205,23 @@
     );
   }
 
-
-  // =======================================================
-  // PEGAR ITENS DA TELA
-  // =======================================================
-
   function getItensChecklist(
     vistoriaId
   ) {
-
     if (
       !window.VistoriaPersist ||
       typeof window.VistoriaPersist
         .collectResponses !==
         'function'
     ) {
-
       throw new Error(
         'Persistência local não carregada.'
       );
     }
 
-
-    const respostas =
-      window.VistoriaPersist
-        .collectResponses();
-
-
-    return respostas.map(
-      resposta => ({
+    return window.VistoriaPersist
+      .collectResponses()
+      .map(resposta => ({
         vistoria_id:
           vistoriaId,
 
@@ -303,603 +242,421 @@
 
         foto_path:
           null
-      })
-    );
+      }));
   }
-
-
-  // =======================================================
-  // APAGAR ITENS ANTIGOS
-  // =======================================================
 
   async function apagarItens(
     vistoriaId
   ) {
-
-    const resposta =
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}`,
-        {
-          method: 'DELETE',
-          headers:
-            getHeaders(
-              'return=minimal'
-            )
-        }
-      );
-
+    const resposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}`,
+      {
+        method: 'DELETE',
+        headers:
+          getHeaders(
+            'return=minimal'
+          )
+      }
+    );
 
     if (!resposta.ok) {
-
       const texto =
         await resposta.text();
 
-      console.error(
-        'Erro ao apagar itens antigos:',
-        resposta.status,
-        texto
+      throw new Error(
+        texto ||
+        'Erro ao apagar itens antigos.'
       );
-
-      throw new Error(texto);
     }
   }
-
-
-  // =======================================================
-  // INSERIR ITENS
-  // =======================================================
 
   async function inserirItens(
     itens
   ) {
-
     if (!itens.length) {
       return [];
     }
 
-
-    const resposta =
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}`,
-        {
-          method: 'POST',
-          headers:
-            getHeaders(
-              'return=minimal'
-            ),
-          body:
-            JSON.stringify(itens)
-        }
-      );
-
+    const resposta = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}`,
+      {
+        method: 'POST',
+        headers:
+          getHeaders(
+            'return=minimal'
+          ),
+        body:
+          JSON.stringify(itens)
+      }
+    );
 
     if (!resposta.ok) {
-
       const texto =
         await resposta.text();
 
-      console.error(
-        'Erro ao inserir itens:',
-        resposta.status,
-        texto
+      throw new Error(
+        texto ||
+        'Erro ao inserir itens.'
       );
-
-      throw new Error(texto);
     }
-
 
     return itens;
   }
 
-// =======================================================
-// UPLOAD DE FOTO
-// =======================================================
+  async function uploadFoto(
+    vistoriaId,
+    setor,
+    item,
+    arquivo
+  ) {
+    if (!arquivo) {
+      return null;
+    }
 
-async function uploadFoto(
-  vistoriaId,
-  setor,
-  item,
-  arquivo
-) {
+    const extensao =
+      arquivo.name &&
+      arquivo.name.includes('.')
+        ? arquivo.name
+            .split('.')
+            .pop()
+            .toLowerCase()
+        : 'jpg';
 
-  if (!arquivo) {
-    return null;
-  }
+    const idArquivo =
+      typeof crypto !== 'undefined' &&
+      typeof crypto.randomUUID ===
+        'function'
+        ? crypto.randomUUID()
+        : (
+            Date.now() +
+            '-' +
+            Math.random()
+              .toString(36)
+              .slice(2)
+          );
 
-  const extensao =
-    arquivo.name &&
-    arquivo.name.includes('.')
-      ? arquivo.name
-          .split('.')
-          .pop()
-          .toLowerCase()
-      : 'jpg';
+    const nomeArquivo =
+      idArquivo + '.' + extensao;
 
-  const nomeArquivo =
-    crypto.randomUUID() +
-    '.' +
-    extensao;
+    const caminho =
+      vistoriaId +
+      '/' +
+      nomeArquivo;
 
-  const caminho =
-    vistoriaId +
-    '/' +
-    nomeArquivo;
-
-  const resposta =
-    await fetch(
+    const resposta = await fetch(
       `${SUPABASE_URL}/storage/v1/object/${BUCKET_FOTOS}/${caminho}`,
       {
         method: 'POST',
 
         headers: {
-          apikey: SUPABASE_KEY,
+          apikey:
+            SUPABASE_KEY,
 
           Authorization:
-            'Bearer ' + SUPABASE_KEY,
+            'Bearer ' +
+            SUPABASE_KEY,
 
           'Content-Type':
-            arquivo.type || 'image/jpeg',
+            arquivo.type ||
+            'image/jpeg',
 
           'x-upsert':
             'false'
         },
 
-        body: arquivo
+        body:
+          arquivo
       }
     );
 
-  if (!resposta.ok) {
-
-    const texto =
-      await resposta.text();
-
-    console.error(
-      'Erro no upload da foto:',
-      resposta.status,
-      texto
-    );
-
-    throw new Error(
-      'Erro ao enviar foto: ' +
-      texto
-    );
-  }
-
-  console.log(
-    'Foto enviada:',
-    caminho
-  );
-
-  return caminho;
-}
-  // =======================================================
-  // SALVAR ITENS DA VISTORIA
-  // =======================================================
-
-async function salvarItens(
-  vistoriaId
-) {
-
-  const itens =
-    getItensChecklist(
-      vistoriaId
-    );
-
-
-  // =====================================================
-  // ENVIAR FOTOS PENDENTES
-  // =====================================================
-
-  for (const item of itens) {
-
-    if (
-      !window.VistoriaFotos ||
-      typeof window.VistoriaFotos
-        .getFotoPorDados !== 'function'
-    ) {
-      continue;
-    }
-
-
-    const arquivo =
-      window.VistoriaFotos
-        .getFotoPorDados(
-          item.setor,
-          item.item
-        );
-
-
-    if (!arquivo) {
-      continue;
-    }
-
-
-    console.log(
-      'Enviando foto:',
-      item.setor,
-      item.item
-    );
-
-
-    const caminho =
-      await uploadFoto(
-        vistoriaId,
-        item.setor,
-        item.item,
-        arquivo
-      );
-
-
-    item.foto_path =
-      caminho;
-
-    item.arquivar_foto =
-      true;
-  }
-
-
-  // =====================================================
-  // SUBSTITUIR ITENS DA VISTORIA
-  // =====================================================
-
-  await apagarItens(
-    vistoriaId
-  );
-
-
-  await inserirItens(
-    itens
-  );
-
-
-  console.log(
-    `${itens.length} item(ns) salvo(s).`
-  );
-
-
-  return itens;
-}
-
-  function validarItensNC() {
-
-  if (
-    !window.VistoriaPersist ||
-    typeof window.VistoriaPersist.collectResponses !== 'function'
-  ) {
-    return true;
-  }
-
-  const respostas =
-    window.VistoriaPersist.collectResponses();
-
-  const pendentes =
-    respostas.filter(item =>
-      item.status === 'NC' &&
-      (
-        !item.obs ||
-        item.obs.trim().length < 3
-      )
-    );
-
-  if (!pendentes.length) {
-    return true;
-  }
-
-  const primeiro =
-    pendentes[0];
-
-  const row =
-    Array.from(
-      document.querySelectorAll('.item-row')
-    ).find(r =>
-      r.dataset.setor === primeiro.setor &&
-      r.dataset.item === primeiro.item
-    );
-
-  if (row) {
-
-    const textarea =
-      row.querySelector('textarea.obs');
-
-    if (textarea) {
-
-      textarea.style.display = 'block';
-
-      textarea.classList.add(
-        'obs-required'
-      );
-
-      textarea.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
-
-      setTimeout(() => {
-        textarea.focus();
-      }, 300);
-    }
-  }
-
-  alert(
-    `Existem ${pendentes.length} item(ns) N/C sem observação.\n\n` +
-    'Preencha a observação antes de salvar.'
-  );
-
-  return false;
-}
-  
-  // =======================================================
-  // SALVAR TUDO
-  // =======================================================
-
- async function salvarVistoria() {
-
-   alert('ENTROU NO DB-V8');
-
-  const botao =
-    document.getElementById(
-      'btn-salvar-meta'
-    );
-
-
-  const dados =
-    getDadosFormulario();
-
-
-  alert('2 - dados do formulário carregados');
-
-
-  // =====================================================
-  // VALIDAR DADOS PRINCIPAIS
-  // =====================================================
-
-  if (!validar(dados)) {
-    return;
-  }
-
-
-  alert('3 - dados principais validados');
-
-
-  // =====================================================
-  // VALIDAR OBSERVAÇÃO DOS N/C
-  // =====================================================
-
-  if (!validarItensNC()) {
-    return;
-  }
-
-
-  alert('4 - N/C validado');
-
-
-  // =====================================================
-  // SALVAR LOCALMENTE
-  // =====================================================
-
-  if (
-    window.VistoriaPersist &&
-    typeof window.VistoriaPersist
-      .saveAll ===
-      'function'
-  ) {
-
-    window.VistoriaPersist
-      .saveAll();
-  }
-
-
-  alert('5 - persistência local concluída');
-
-
-  // =====================================================
-  // ALTERAR BOTÃO
-  // =====================================================
-
-  if (botao) {
-
-    botao.disabled = true;
-
-    botao.textContent =
-      'Salvando...';
-  }
-
-
-  alert('6 - iniciando comunicação com banco');
-
-
-  try {
-
-    let vistoria;
-
-
-    let vistoriaId =
-      getVistoriaId();
-
-
-    alert(
-      '7 - vistoria ID: ' +
-      (vistoriaId || 'NOVA')
-    );
-
-
-    // ===================================================
-    // ATUALIZAR OU CRIAR VISTORIA
-    // ===================================================
-
-    if (vistoriaId) {
-
-      alert(
-        '8 - atualizando vistoria existente'
-      );
-
-
-      vistoria =
-        await atualizarVistoria(
-          vistoriaId,
-          dados
-        );
-
-
-      alert(
-        '9 - vistoria atualizada'
-      );
-
-
-    } else {
-
-      alert(
-        '8 - criando nova vistoria'
-      );
-
-
-      vistoria =
-        await criarVistoria(
-          dados
-        );
-
-
-      alert(
-        '9 - vistoria criada'
-      );
-
-
-      vistoriaId =
-        vistoria.id;
-    }
-
-
-    // ===================================================
-    // SALVAR ITENS + FOTOS
-    // ===================================================
-
-    alert(
-      '10 - iniciando salvamento dos itens'
-    );
-
-
-    await salvarItens(
-      vistoriaId
-    );
-
-
-    alert(
-      '11 - itens salvos'
-    );
-
-
-    // ===================================================
-    // CONCLUÍDO
-    // ===================================================
-
-    alert(
-      'Vistoria e itens salvos com sucesso.'
-    );
-
-
-    console.log(
-      'Vistoria salva:',
-      vistoria
-    );
-
-
-    return vistoria;
-
-
-  } catch (erro) {
-
-    console.error(
-      'Falha ao salvar:',
-      erro
-    );
-
-
-    alert(
-      'ERRO NO SALVAMENTO:\n\n' +
-      (
-        erro?.message ||
-        String(erro)
-      )
-    );
-
-
-    return null;
-
-
-  } finally {
-
-    if (botao) {
-
-      botao.disabled =
-        false;
-
-      botao.textContent =
-        'Salvar';
-    }
-  }
-}
-
-  // =======================================================
-// CONCLUIR VISTORIA
-// =======================================================
-
-async function concluirVistoria() {
-
-  const botao =
-    document.getElementById(
-      'btn-concluir-checklist'
-    );
-
-
-  try {
-
-    if (botao) {
-
-      botao.disabled =
-        true;
-
-      botao.textContent =
-        'Concluindo...';
-    }
-
-
-    // Primeiro salva normalmente.
-    // Aqui já ocorre a validação dos
-    // campos e das observações N/C.
-
-    const vistoria =
-      await salvarVistoria();
-
-
-    if (!vistoria) {
-
-      return false;
-    }
-
-
-    const vistoriaId =
-      getVistoriaId();
-
-
-    if (!vistoriaId) {
+    if (!resposta.ok) {
+      const texto =
+        await resposta.text();
 
       throw new Error(
-        'ID da vistoria não encontrado.'
+        'Erro ao enviar foto: ' +
+        texto
       );
     }
 
+    return caminho;
+  }
 
-    // =========================================
-    // ALTERAR STATUS PARA FINALIZADA
-    // =========================================
+  async function salvarItens(
+    vistoriaId
+  ) {
+    const itens =
+      getItensChecklist(
+        vistoriaId
+      );
 
-    const resposta =
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}` +
-        `?id=eq.${encodeURIComponent(vistoriaId)}`,
+    for (const item of itens) {
+      if (
+        !window.VistoriaFotos ||
+        typeof window.VistoriaFotos
+          .getFotoPorDados !==
+          'function'
+      ) {
+        break;
+      }
+
+      const arquivo =
+        window.VistoriaFotos
+          .getFotoPorDados(
+            item.setor,
+            item.item
+          );
+
+      if (!arquivo) {
+        continue;
+      }
+
+      item.foto_path =
+        await uploadFoto(
+          vistoriaId,
+          item.setor,
+          item.item,
+          arquivo
+        );
+
+      item.arquivar_foto =
+        true;
+    }
+
+    await apagarItens(
+      vistoriaId
+    );
+
+    await inserirItens(
+      itens
+    );
+
+    return itens;
+  }
+
+  function validarItensNC() {
+    if (
+      !window.VistoriaPersist ||
+      typeof window.VistoriaPersist
+        .collectResponses !==
+        'function'
+    ) {
+      return true;
+    }
+
+    const respostas =
+      window.VistoriaPersist
+        .collectResponses();
+
+    const pendentes =
+      respostas.filter(item =>
+        item.status === 'NC' &&
+        (
+          !item.obs ||
+          item.obs.trim().length < 3
+        )
+      );
+
+    document
+      .querySelectorAll(
+        'textarea.obs.obs-required'
+      )
+      .forEach(el =>
+        el.classList.remove(
+          'obs-required'
+        )
+      );
+
+    if (!pendentes.length) {
+      return true;
+    }
+
+    const primeiro =
+      pendentes[0];
+
+    const row =
+      Array.from(
+        document.querySelectorAll(
+          '.item-row'
+        )
+      ).find(r =>
+        r.dataset.setor ===
+          primeiro.setor &&
+        r.dataset.item ===
+          primeiro.item
+      );
+
+    if (row) {
+      const textarea =
+        row.querySelector(
+          'textarea.obs'
+        );
+
+      if (textarea) {
+        textarea.style.display =
+          'block';
+
+        textarea.classList.add(
+          'obs-required'
+        );
+
+        textarea.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+
+        setTimeout(
+          () => textarea.focus(),
+          300
+        );
+      }
+    }
+
+    alert(
+      `Existem ${pendentes.length} item(ns) N/C sem observação.\n\n` +
+      'Preencha a observação antes de salvar.'
+    );
+
+    return false;
+  }
+
+  async function salvarVistoria() {
+    const botao =
+      document.getElementById(
+        'btn-salvar-meta'
+      );
+
+    const dados =
+      getDadosFormulario();
+
+    if (!validar(dados)) {
+      return null;
+    }
+
+    if (!validarItensNC()) {
+      return null;
+    }
+
+    if (
+      window.VistoriaPersist &&
+      typeof window.VistoriaPersist
+        .saveAll ===
+        'function'
+    ) {
+      window.VistoriaPersist
+        .saveAll();
+    }
+
+    if (botao) {
+      botao.disabled = true;
+      botao.textContent =
+        'Salvando...';
+    }
+
+    try {
+      let vistoria;
+      let vistoriaId =
+        getVistoriaId();
+
+      if (vistoriaId) {
+        vistoria =
+          await atualizarVistoria(
+            vistoriaId,
+            dados
+          );
+      } else {
+        vistoria =
+          await criarVistoria(
+            dados
+          );
+
+        vistoriaId =
+          vistoria.id;
+      }
+
+      setVistoriaId(
+        vistoriaId
+      );
+
+      await salvarItens(
+        vistoriaId
+      );
+
+      if (
+        window.VistoriaPersist &&
+        typeof window.VistoriaPersist
+          .saveAll ===
+          'function'
+      ) {
+        window.VistoriaPersist
+          .saveAll();
+      }
+
+      alert(
+        'Vistoria e itens salvos com sucesso.'
+      );
+
+      return {
+        ...vistoria,
+        id: vistoriaId
+      };
+    } catch (erro) {
+      console.error(
+        'Falha ao salvar:',
+        erro
+      );
+
+      alert(
+        'Não foi possível salvar a vistoria.\n\n' +
+        (
+          erro?.message ||
+          String(erro)
+        )
+      );
+
+      return null;
+    } finally {
+      if (botao) {
+        botao.disabled = false;
+        botao.textContent =
+          'Salvar';
+      }
+    }
+  }
+
+  async function concluirVistoria() {
+    const botao =
+      document.getElementById(
+        'btn-concluir-checklist'
+      );
+
+    try {
+      if (botao) {
+        botao.disabled = true;
+        botao.textContent =
+          'Concluindo...';
+      }
+
+      const vistoria =
+        await salvarVistoria();
+
+      if (!vistoria) {
+        return false;
+      }
+
+      const vistoriaId =
+        getVistoriaId();
+
+      if (!vistoriaId) {
+        throw new Error(
+          'ID da vistoria não encontrado.'
+        );
+      }
+
+      const resposta = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}?id=eq.${encodeURIComponent(vistoriaId)}`,
         {
-          method:
-            'PATCH',
+          method: 'PATCH',
 
           headers:
             getHeaders(
@@ -918,91 +675,74 @@ async function concluirVistoria() {
         }
       );
 
+      const texto =
+        await resposta.text();
 
-    const texto =
-      await resposta.text();
+      if (!resposta.ok) {
+        throw new Error(
+          texto ||
+          'Não foi possível finalizar a vistoria.'
+        );
+      }
 
+      if (
+        window.VistoriaPersist &&
+        typeof window.VistoriaPersist
+          .clearCurrent ===
+          'function'
+      ) {
+        window.VistoriaPersist
+          .clearCurrent();
+      }
 
-    if (!resposta.ok) {
+      clearVistoriaId();
 
-      throw new Error(
-        texto ||
-        'Não foi possível finalizar a vistoria.'
+      localStorage.removeItem(
+        'checklist_nova_vistoria'
       );
-    }
 
+      alert(
+        'Checklist concluído com sucesso.'
+      );
 
-    alert(
-      'Checklist concluído com sucesso.'
-    );
+      window.location.href =
+        'index.html';
 
+      return true;
+    } catch (erro) {
+      console.error(
+        'Erro ao concluir checklist:',
+        erro
+      );
 
-    // limpa apenas o identificador
-    // da vistoria corrente
+      alert(
+        'Não foi possível concluir o checklist.\n\n' +
+        (
+          erro?.message ||
+          String(erro)
+        )
+      );
 
-    clearVistoriaId();
-
-
-    localStorage.removeItem(
-      'checklist_nova_vistoria'
-    );
-
-
-    // limpa os dados locais
-    // da vistoria já encerrada
-
-    localStorage.removeItem(
-      'checklist_vistoria_local_v2'
-    );
-
-
-    // volta para a página principal
-
-    window.location.href =
-      'index.html';
-
-
-    return true;
-
-
-  } catch (erro) {
-
-    console.error(
-      'Erro ao concluir checklist:',
-      erro
-    );
-
-
-    alert(
-      'Não foi possível concluir o checklist.\n\n' +
-      (
-        erro?.message ||
-        String(erro)
-      )
-    );
-
-
-    return false;
-
-
-  } finally {
-
-    if (botao) {
-
-      botao.disabled =
-        false;
-
-      botao.textContent =
-        'Concluir Checklist';
+      return false;
+    } finally {
+      if (botao) {
+        botao.disabled = false;
+        botao.textContent =
+          'Concluir Checklist';
+      }
     }
   }
-}
-
-  // =======================================================
-  // NOVA VISTORIA
-  // =======================================================
 
   function novaVistoria() {
+    if (
+      window.VistoriaPersist &&
+      typeof window.VistoriaPersist
+        .clearCurrent ===
+        'function'
+    ) {
+      window.VistoriaPersist
+        .clearCurrent();
+    }
 
     clearVistoriaId();
 
@@ -1011,26 +751,13 @@ async function concluirVistoria() {
     );
   }
 
-
-  // =======================================================
-  // API GLOBAL
-  // =======================================================
-
-window.VistoriaDB = {
-
-  salvarVistoria,
-
-  concluirVistoria,
-
-  salvarItens,
-
-  uploadFoto,
-
-  novaVistoria,
-
-  getVistoriaId,
-
-  setVistoriaId
-};
-
+  window.VistoriaDB = {
+    salvarVistoria,
+    concluirVistoria,
+    salvarItens,
+    uploadFoto,
+    novaVistoria,
+    getVistoriaId,
+    setVistoriaId
+  };
 })();
