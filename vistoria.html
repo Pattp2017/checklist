@@ -8,93 +8,49 @@
 </head>
 <body>
 
-  <center>
-    <h1>Checklist de Vistoria</h1>
-  </center>
+  <center><h1>Checklist de Vistoria</h1></center>
 
   <div class="meta" aria-label="Dados da auditoria">
-    <label>
-      Empresa:
-      <input id="meta-empresa-nome" type="text" placeholder="Nome da empresa" />
-    </label>
-
+    <label>Empresa:<input id="meta-empresa-nome" type="text" placeholder="Nome da empresa" /></label>
     <input id="meta-empresa-id" type="hidden" />
-
-    <label>
-      Responsável técnico:
-      <input id="meta-responsavel-tecnico" type="text" placeholder="Responsável técnico" />
-    </label>
-
-    <label>
-      Responsável pela auditoria:
-      <input id="meta-responsavel-auditoria" type="text" placeholder="Responsável pela auditoria" />
-    </label>
-
-    <label>
-      Data da auditoria:
-      <input id="meta-data-auditoria" type="date" />
-    </label>
-
-    <label>
-      Horário:
-      <input id="meta-horario" type="text" readonly />
-    </label>
-
+    <label>Responsável técnico:<input id="meta-responsavel-tecnico" type="text" placeholder="Responsável técnico" /></label>
+    <label>Responsável pela auditoria:<input id="meta-responsavel-auditoria" type="text" placeholder="Responsável pela auditoria" /></label>
+    <label>Data da auditoria:<input id="meta-data-auditoria" type="date" /></label>
+    <label>Horário:<input id="meta-horario" type="text" readonly /></label>
     <div class="meta-actions">
-      <button class="btn-save" id="btn-salvar-meta" type="button">
-        Salvar
-      </button>
-
-      <button class="btn" id="btn-concluir-checklist" type="button">
-        Concluir Checklist
-      </button>
+      <button class="btn-save" id="btn-salvar-meta" type="button">Salvar</button>
+      <button class="btn" id="btn-concluir-checklist" type="button">Concluir Checklist</button>
     </div>
   </div>
 
   <div class="controls-top">
     <label class="small" for="select-local">Escolha o local:</label>
-
     <select id="select-local" class="select-local" aria-label="Selecionar local" disabled>
       <option value="ALL">Carregando locais...</option>
     </select>
   </div>
 
-  <div id="checklist">
-    <div style="padding:16px;text-align:center;">Carregando checklist...</div>
-  </div>
+  <div id="checklist"><div style="padding:16px;text-align:center;">Carregando checklist...</div></div>
 
 <script>
 (function () {
   const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
-
   const selectLocal = document.getElementById('select-local');
   const checklistEl = document.getElementById('checklist');
   const btnSalvarMeta = document.getElementById('btn-salvar-meta');
   const btnConcluirChecklist = document.getElementById('btn-concluir-checklist');
-
+  const campoDataAuditoria = document.getElementById('meta-data-auditoria');
   let initialData = [];
 
   function getSupabaseHeaders() {
-    return {
-      apikey: SUPABASE_KEY,
-      Authorization: 'Bearer ' + SUPABASE_KEY,
-      Accept: 'application/json'
-    };
+    return { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, Accept: 'application/json' };
   }
 
   async function buscarJson(url) {
-    const resposta = await fetch(url, {
-      method: 'GET',
-      headers: getSupabaseHeaders()
-    });
-
+    const resposta = await fetch(url, { method: 'GET', headers: getSupabaseHeaders() });
     const texto = await resposta.text();
-
-    if (!resposta.ok) {
-      throw new Error(texto || 'Erro ao consultar Supabase.');
-    }
-
+    if (!resposta.ok) throw new Error(texto || 'Erro ao consultar Supabase.');
     return texto ? JSON.parse(texto) : [];
   }
 
@@ -104,37 +60,20 @@
     selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
 
     const [locais, itensMestre, vinculos] = await Promise.all([
-      buscarJson(
-        `${SUPABASE_URL}/rest/v1/checklist_locais?select=id,nome,ordem,ativo&ativo=eq.true`
-      ),
-      buscarJson(
-        `${SUPABASE_URL}/rest/v1/checklist_itens_mestre?select=id,descricao,ativo&ativo=eq.true`
-      ),
-      buscarJson(
-        `${SUPABASE_URL}/rest/v1/checklist_local_itens?select=id,local_id,item_id,ordem,ativo&ativo=eq.true`
-      )
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_locais?select=id,nome,ordem,ativo&ativo=eq.true`),
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_itens_mestre?select=id,descricao,ativo&ativo=eq.true`),
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_local_itens?select=id,local_id,item_id,ordem,ativo&ativo=eq.true`)
     ]);
 
     const locaisPorId = new Map(locais.map(local => [String(local.id), local]));
     const itensPorId = new Map(itensMestre.map(item => [String(item.id), item]));
 
-    initialData = vinculos
-      .map(vinculo => {
-        const local = locaisPorId.get(String(vinculo.local_id));
-        const item = itensPorId.get(String(vinculo.item_id));
-
-        if (!local || !item) return null;
-
-        return {
-          local_id: local.id,
-          item_id: item.id,
-          setor: local.nome,
-          item: item.descricao,
-          ordem: vinculo.ordem || 0,
-          status: 'C'
-        };
-      })
-      .filter(Boolean);
+    initialData = vinculos.map(vinculo => {
+      const local = locaisPorId.get(String(vinculo.local_id));
+      const item = itensPorId.get(String(vinculo.item_id));
+      if (!local || !item) return null;
+      return { local_id: local.id, item_id: item.id, setor: local.nome, item: item.descricao, ordem: vinculo.ordem || 0, status: 'C' };
+    }).filter(Boolean);
 
     initialData.sort((a, b) => {
       const porLocal = a.setor.localeCompare(b.setor, 'pt-BR', { sensitivity: 'base' });
@@ -142,32 +81,19 @@
       return (a.ordem || 0) - (b.ordem || 0);
     });
 
-    if (!initialData.length) {
-      throw new Error('Nenhum item ativo foi encontrado na matriz do checklist.');
-    }
-
+    if (!initialData.length) throw new Error('Nenhum item ativo foi encontrado na matriz do checklist.');
     populateLocalMenu();
     renderAllSections(initialData);
-
     selectLocal.disabled = false;
     selectLocal.value = 'ALL';
     showLocal('ALL', false);
-
-    console.log(
-      `${locais.length} local(is), ${itensMestre.length} item(ns) mestre e ${initialData.length} vínculo(s) carregados.`
-    );
   }
 
-  function getUniqueSetores(data) {
-    return [...new Set(data.map(item => item.setor))];
-  }
+  function getUniqueSetores(data) { return [...new Set(data.map(item => item.setor))]; }
 
   function populateLocalMenu() {
-    const setores = getUniqueSetores(initialData)
-      .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
-
+    const setores = getUniqueSetores(initialData).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
     selectLocal.innerHTML = '<option value="ALL">Todos os locais</option>';
-
     setores.forEach(setor => {
       const option = document.createElement('option');
       option.value = setor;
@@ -178,23 +104,21 @@
 
   function createRadio(name, val, checked) {
     const radio = document.createElement('input');
-    radio.type = 'radio';
-    radio.name = name;
-    radio.value = val;
-    radio.checked = !!checked;
-    radio.style.width = '18px';
-    radio.style.height = '18px';
+    radio.type = 'radio'; radio.name = name; radio.value = val; radio.checked = !!checked;
+    radio.style.width = '18px'; radio.style.height = '18px';
     return radio;
   }
 
-  function atualizarEstadoLinha(row, obs, rNC) {
+  function atualizarEstadoLinha(row, camposNC, rNC) {
     if (rNC.checked) {
-      obs.style.display = 'block';
+      camposNC.style.display = 'block';
       row.classList.add('is-nc');
+      const dataNC = row.querySelector('.data-nc');
+      if (dataNC && !dataNC.value) dataNC.value = campoDataAuditoria.value || '';
     } else {
-      obs.style.display = 'none';
-      obs.classList.remove('obs-required');
+      camposNC.style.display = 'none';
       row.classList.remove('is-nc');
+      row.querySelectorAll('.obs-required').forEach(el => el.classList.remove('obs-required'));
     }
   }
 
@@ -205,158 +129,105 @@
     data.forEach((d, idx) => {
       if (!sections[d.setor]) {
         const section = document.createElement('section');
-        section.className = 'sector';
-        section.dataset.setor = d.setor;
-        section.dataset.localId = d.local_id || '';
-        section.style.display = 'none';
-
-        const h = document.createElement('h2');
-        h.textContent = d.setor;
-        section.appendChild(h);
-
-        checklistEl.appendChild(section);
-        sections[d.setor] = section;
+        section.className = 'sector'; section.dataset.setor = d.setor; section.dataset.localId = d.local_id || ''; section.style.display = 'none';
+        const h = document.createElement('h2'); h.textContent = d.setor; section.appendChild(h);
+        checklistEl.appendChild(section); sections[d.setor] = section;
       }
 
       const row = document.createElement('div');
-      row.className = 'item-row';
-      row.dataset.setor = d.setor;
-      row.dataset.item = d.item;
-      row.dataset.localId = d.local_id || '';
-      row.dataset.itemId = d.item_id || '';
-
-      const main = document.createElement('div');
-      main.className = 'row-main';
-
-      const lbl = document.createElement('div');
-      lbl.className = 'item-label';
-      lbl.textContent = d.item;
-      main.appendChild(lbl);
-
-      const opts = document.createElement('div');
-      opts.className = 'options';
-
+      row.className = 'item-row'; row.dataset.setor = d.setor; row.dataset.item = d.item; row.dataset.localId = d.local_id || ''; row.dataset.itemId = d.item_id || '';
+      const main = document.createElement('div'); main.className = 'row-main';
+      const lbl = document.createElement('div'); lbl.className = 'item-label'; lbl.textContent = d.item; main.appendChild(lbl);
+      const opts = document.createElement('div'); opts.className = 'options';
       const name = `radio_${idx}`;
-      const rC = createRadio(name, 'C', true);
-      const rNC = createRadio(name, 'NC', false);
-      const rNA = createRadio(name, 'NA', false);
-
-      [
-        [rC, 'C'],
-        [rNC, 'N/C'],
-        [rNA, 'N/A']
-      ].forEach(([radio, texto]) => {
-        const label = document.createElement('label');
-        label.appendChild(radio);
-        label.appendChild(document.createTextNode(texto));
-        opts.appendChild(label);
+      const rC = createRadio(name, 'C', true), rNC = createRadio(name, 'NC', false), rNA = createRadio(name, 'NA', false);
+      [[rC,'C'],[rNC,'N/C'],[rNA,'N/A']].forEach(([radio,texto]) => {
+        const label = document.createElement('label'); label.appendChild(radio); label.appendChild(document.createTextNode(texto)); opts.appendChild(label);
       });
+      main.appendChild(opts); row.appendChild(main);
 
-      main.appendChild(opts);
-      row.appendChild(main);
+      const camposNC = document.createElement('div');
+      camposNC.className = 'campos-nc';
+      camposNC.style.display = 'none';
 
       const obs = document.createElement('textarea');
-      obs.className = 'obs';
-      obs.placeholder = 'Observação (obrigatória quando N/C)';
-      obs.rows = 2;
-      obs.style.display = 'none';
-      row.appendChild(obs);
+      obs.className = 'obs'; obs.placeholder = 'Observação (obrigatória quando N/C)'; obs.rows = 2;
+      camposNC.appendChild(obs);
 
-      [rC, rNC, rNA].forEach(radio => {
-        radio.addEventListener('change', () => {
-          atualizarEstadoLinha(row, obs, rNC);
+      const responsavel = document.createElement('input');
+      responsavel.type = 'text'; responsavel.className = 'responsavel-nc'; responsavel.placeholder = 'Responsável pela adequação';
+      camposNC.appendChild(responsavel);
 
-          if (!rNC.checked) {
-            obs.value = '';
-          }
-        });
-      });
+      const dataNC = document.createElement('input');
+      dataNC.type = 'date'; dataNC.className = 'data-nc';
+      camposNC.appendChild(dataNC);
+      row.appendChild(camposNC);
+
+      [rC, rNC, rNA].forEach(radio => radio.addEventListener('change', () => {
+        atualizarEstadoLinha(row, camposNC, rNC);
+        if (!rNC.checked) { obs.value = ''; responsavel.value = ''; dataNC.value = ''; }
+      }));
 
       sections[d.setor].appendChild(row);
     });
   }
 
-  function showLocal(local, rolar = true) {
-    const sections = checklistEl.querySelectorAll('.sector');
-
-    sections.forEach(section => {
-      section.style.display =
-        local === 'ALL' || section.dataset.setor === local
-          ? 'block'
-          : 'none';
+  campoDataAuditoria.addEventListener('change', () => {
+    document.querySelectorAll('.item-row').forEach(row => {
+      const nc = row.querySelector('input[type="radio"][value="NC"]');
+      const dataNC = row.querySelector('.data-nc');
+      if (nc?.checked && dataNC && !dataNC.dataset.alteradaUsuario) dataNC.value = campoDataAuditoria.value || '';
     });
+  });
 
-    if (rolar) {
-      checklistEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  document.addEventListener('change', event => {
+    if (event.target?.classList?.contains('data-nc')) event.target.dataset.alteradaUsuario = 'true';
+  });
+
+  function showLocal(local, rolar = true) {
+    checklistEl.querySelectorAll('.sector').forEach(section => {
+      section.style.display = local === 'ALL' || section.dataset.setor === local ? 'block' : 'none';
+    });
+    if (rolar) checklistEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  selectLocal.addEventListener('change', () => {
-    showLocal(selectLocal.value);
-  });
+  selectLocal.addEventListener('change', () => showLocal(selectLocal.value));
 
   function carregarScript(src) {
     return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = resolve;
-      script.onerror = () => reject(new Error(`Não foi possível carregar ${src}`));
-      document.body.appendChild(script);
+      const script = document.createElement('script'); script.src = src; script.onload = resolve;
+      script.onerror = () => reject(new Error(`Não foi possível carregar ${src}`)); document.body.appendChild(script);
     });
   }
 
   async function iniciarAplicacao() {
     try {
       await carregarModeloChecklist();
-
-      await carregarScript('persist.js?v=13');
+      await carregarScript('persist.js?v=14');
       await carregarScript('speech.js?v=13');
-      await carregarScript('db-v8.js?v=13');
+      await carregarScript('db-v8.js?v=14');
       await carregarScript('photo.js?v=13');
 
       btnSalvarMeta.addEventListener('click', async () => {
-        if (!window.VistoriaDB) {
-          alert('Módulo do banco não carregado.');
-          return;
-        }
-
+        if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
         await window.VistoriaDB.salvarVistoria();
       });
 
       btnConcluirChecklist.addEventListener('click', async () => {
-        if (!window.VistoriaDB) {
-          alert('Módulo do banco não carregado.');
-          return;
-        }
-
-        const confirmar = confirm(
-          'Deseja concluir este checklist?\n\nApós a conclusão, a vistoria será marcada como finalizada.'
-        );
-
+        if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+        const confirmar = confirm('Deseja concluir este checklist?\n\nApós a conclusão, a vistoria será marcada como finalizada.');
         if (!confirmar) return;
-
         await window.VistoriaDB.concluirVistoria();
       });
-
-      console.log('Checklist inicializado com dados do Supabase.');
     } catch (erro) {
       console.error('Erro ao iniciar checklist:', erro);
-
-      checklistEl.innerHTML = `
-        <div style="padding:16px;margin:12px;border:1px solid #e3a6a6;border-radius:8px;background:#fff1f1;color:#a11;">
-          Não foi possível carregar o checklist.<br><br>
-          ${String(erro.message || erro)}
-        </div>
-      `;
-
-      selectLocal.innerHTML = '<option value="ALL">Erro ao carregar locais</option>';
-      selectLocal.disabled = true;
+      checklistEl.innerHTML = `<div style="padding:16px;margin:12px;border:1px solid #e3a6a6;border-radius:8px;background:#fff1f1;color:#a11;">Não foi possível carregar o checklist.<br><br>${String(erro.message || erro)}</div>`;
+      selectLocal.innerHTML = '<option value="ALL">Erro ao carregar locais</option>'; selectLocal.disabled = true;
     }
   }
 
   iniciarAplicacao();
 })();
 </script>
-
 </body>
 </html>
