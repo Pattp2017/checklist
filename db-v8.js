@@ -180,7 +180,7 @@
         if (window.VistoriaPersist?.clearCurrent) window.VistoriaPersist.clearCurrent();
         clearVistoriaId();
         localStorage.removeItem('checklist_nova_vistoria');
-        window.location.href = 'index.html';
+        window.location.replace('checklists.html');
         return true;
       }
 
@@ -212,8 +212,9 @@
       if (window.VistoriaPersist?.clearCurrent) window.VistoriaPersist.clearCurrent();
       clearVistoriaId();
       localStorage.removeItem('checklist_nova_vistoria');
-      alert('Checklist em andamento excluído.');
-      window.location.href = 'index.html';
+      localStorage.removeItem('checklist_modelo_id');
+      localStorage.removeItem('checklist_modelo_nome');
+      window.location.replace('checklists.html');
       return true;
     } catch (erro) {
       console.error('Erro ao excluir checklist:', erro);
