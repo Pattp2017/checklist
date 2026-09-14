@@ -5,10 +5,82 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Checklist de Vistoria</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .vistoria-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0 14px;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid #d6e0ea;
+      border-radius: 8px;
+    }
+    .btn-voltar {
+      border: 0;
+      background: transparent;
+      color: #0b6aa6;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 4px;
+      white-space: nowrap;
+    }
+    .local-progresso {
+      flex: 1;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .saida-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .55);
+    }
+    .saida-overlay.aberto { display: flex; }
+    .saida-dialog {
+      width: min(440px, 100%);
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+    }
+    .saida-dialog h3 { margin: 0 0 8px; color: #0f172a; }
+    .saida-dialog p { margin: 0 0 18px; color: #475569; line-height: 1.4; }
+    .saida-acoes { display: grid; gap: 8px; }
+    .saida-acoes button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .saida-salvar { background: #0b6aa6; color: #fff; }
+    .saida-sem-salvar { background: #fff1f1; color: #a11; border: 1px solid #e3a6a6 !important; }
+    .saida-cancelar { background: #eef2f7; color: #334155; }
+    @media (max-width: 600px) {
+      .vistoria-nav { gap: 6px; padding: 9px 8px; }
+      .local-progresso { font-size: 13px; text-align: left; }
+      .btn-voltar { font-size: 14px; }
+    }
+  </style>
 </head>
 <body>
 
   <center><h1>Checklist de Vistoria</h1></center>
+
+  <div class="vistoria-nav">
+    <button id="btn-voltar-vistoria" class="btn-voltar" type="button" aria-label="Voltar">‹ Voltar</button>
+    <div id="local-progresso" class="local-progresso">Carregando locais...</div>
+  </div>
 
   <div class="meta" aria-label="Dados da auditoria">
     <label>Empresa:<input id="meta-empresa-nome" type="text" placeholder="Nome da empresa" /></label>
@@ -33,6 +105,18 @@
 
   <div id="checklist"><div style="padding:16px;text-align:center;">Carregando checklist...</div></div>
 
+  <div id="saida-overlay" class="saida-overlay" role="dialog" aria-modal="true" aria-labelledby="saida-titulo">
+    <div class="saida-dialog">
+      <h3 id="saida-titulo">Alterações não salvas</h3>
+      <p>Existem alterações não salvas. Deseja salvar antes de sair?</p>
+      <div class="saida-acoes">
+        <button id="btn-salvar-voltar" class="saida-salvar" type="button">Salvar e voltar</button>
+        <button id="btn-sair-sem-salvar" class="saida-sem-salvar" type="button">Sair sem salvar</button>
+        <button id="btn-fechar-saida" class="saida-cancelar" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function () {
   const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
@@ -42,8 +126,16 @@
   const btnSalvarMeta = document.getElementById('btn-salvar-meta');
   const btnConcluirChecklist = document.getElementById('btn-concluir-checklist');
   const btnCancelarChecklist = document.getElementById('btn-cancelar-checklist');
+  const btnVoltarVistoria = document.getElementById('btn-voltar-vistoria');
+  const localProgresso = document.getElementById('local-progresso');
+  const saidaOverlay = document.getElementById('saida-overlay');
+  const btnSalvarVoltar = document.getElementById('btn-salvar-voltar');
+  const btnSairSemSalvar = document.getElementById('btn-sair-sem-salvar');
+  const btnFecharSaida = document.getElementById('btn-fechar-saida');
   const campoDataAuditoria = document.getElementById('meta-data-auditoria');
   let initialData = [];
+  let alteracoesNaoSalvas = false;
+  let monitorarAlteracoes = false;
 
   function getSupabaseHeaders() {
     return { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, Accept: 'application/json' };
@@ -159,8 +251,9 @@
     populateLocalMenu();
     renderAllSections(initialData);
     selectLocal.disabled = false;
-    selectLocal.value = 'ALL';
-    showLocal('ALL', false);
+    const primeiroLocal = getUniqueSetores(initialData)[0] || 'ALL';
+    selectLocal.value = primeiroLocal;
+    showLocal(primeiroLocal, false);
   }
 
   function getUniqueSetores(data) { return [...new Set(data.map(item => item.setor))]; }
@@ -256,12 +349,34 @@
 
   document.addEventListener('change', event => {
     if (event.target?.classList?.contains('data-nc')) event.target.dataset.alteradaUsuario = 'true';
+    if (monitorarAlteracoes && event.target !== selectLocal) alteracoesNaoSalvas = true;
   });
+
+  document.addEventListener('input', event => {
+    if (!monitorarAlteracoes) return;
+    if (event.target.closest?.('#saida-overlay')) return;
+    if (event.target === selectLocal) return;
+    alteracoesNaoSalvas = true;
+  });
+
+  function atualizarProgressoLocal(local) {
+    const setores = getUniqueSetores(initialData);
+    if (!setores.length) { localProgresso.textContent = 'Nenhum local'; return; }
+    if (local === 'ALL') {
+      localProgresso.textContent = `Todos os locais • ${setores.length} locais`;
+      return;
+    }
+    const indice = setores.indexOf(local);
+    localProgresso.textContent = indice >= 0
+      ? `Local ${indice + 1} de ${setores.length} • ${local}`
+      : local;
+  }
 
   function showLocal(local, rolar = true) {
     checklistEl.querySelectorAll('.sector').forEach(section => {
       section.style.display = local === 'ALL' || section.dataset.setor === local ? 'block' : 'none';
     });
+    atualizarProgressoLocal(local);
     if (rolar) checklistEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -274,6 +389,30 @@
     });
   }
 
+  function fecharDialogSaida() { saidaOverlay.classList.remove('aberto'); }
+  function abrirDialogSaida() { saidaOverlay.classList.add('aberto'); }
+
+  function voltarParaTelaAnterior() {
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = 'index.html';
+  }
+
+  async function salvarAntesDeVoltar() {
+    if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+    btnSalvarVoltar.disabled = true;
+    btnSalvarVoltar.textContent = 'Salvando...';
+    try {
+      const resultado = await window.VistoriaDB.salvarVistoria();
+      if (!resultado) return;
+      alteracoesNaoSalvas = false;
+      fecharDialogSaida();
+      voltarParaTelaAnterior();
+    } finally {
+      btnSalvarVoltar.disabled = false;
+      btnSalvarVoltar.textContent = 'Salvar e voltar';
+    }
+  }
+
   async function iniciarAplicacao() {
     try {
       await carregarModeloChecklist();
@@ -282,9 +421,15 @@
       await carregarScript('db-v8.js?v=15');
       await carregarScript('photo.js?v=13');
 
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        alteracoesNaoSalvas = false;
+        monitorarAlteracoes = true;
+      }));
+
       btnSalvarMeta.addEventListener('click', async () => {
         if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
-        await window.VistoriaDB.salvarVistoria();
+        const resultado = await window.VistoriaDB.salvarVistoria();
+        if (resultado) alteracoesNaoSalvas = false;
       });
 
       btnConcluirChecklist.addEventListener('click', async () => {
@@ -298,10 +443,27 @@
         if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
         await window.VistoriaDB.cancelarVistoria();
       });
+
+      btnVoltarVistoria.addEventListener('click', () => {
+        if (alteracoesNaoSalvas) abrirDialogSaida();
+        else voltarParaTelaAnterior();
+      });
+
+      btnSalvarVoltar.addEventListener('click', salvarAntesDeVoltar);
+      btnSairSemSalvar.addEventListener('click', () => {
+        alteracoesNaoSalvas = false;
+        fecharDialogSaida();
+        voltarParaTelaAnterior();
+      });
+      btnFecharSaida.addEventListener('click', fecharDialogSaida);
+      saidaOverlay.addEventListener('click', event => {
+        if (event.target === saidaOverlay) fecharDialogSaida();
+      });
     } catch (erro) {
       console.error('Erro ao iniciar checklist:', erro);
       checklistEl.innerHTML = `<div style="padding:16px;margin:12px;border:1px solid #e3a6a6;border-radius:8px;background:#fff1f1;color:#a11;">Não foi possível carregar o checklist.<br><br>${String(erro.message || erro)}</div>`;
       selectLocal.innerHTML = '<option value="ALL">Erro ao carregar locais</option>'; selectLocal.disabled = true;
+      localProgresso.textContent = 'Erro ao carregar locais';
     }
   }
 
