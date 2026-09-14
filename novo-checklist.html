@@ -169,7 +169,7 @@
   }
 async function criarSnapshotVistoria(vistoriaId, modeloId) {
   const respostaLocais = await fetch(
-    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem&order=ordem.asc`,
+    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem,local_mestre_id&order=ordem.asc`,
     { headers: checklistHeaders() }
   );
 
@@ -186,7 +186,7 @@ async function criarSnapshotVistoria(vistoriaId, modeloId) {
     : [];
 
   const respostaItens = await fetch(
-    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_modelo_itens?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,modelo_local_id,item,ordem&order=ordem.asc`,
+    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_modelo_itens?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,modelo_local_id,item,ordem,item_mestre_id&order=ordem.asc`,
     { headers: checklistHeaders() }
   );
 
@@ -256,8 +256,8 @@ async function criarSnapshotVistoria(vistoriaId, modeloId) {
     return {
       vistoria_id: vistoriaId,
 
-      item_mestre_id: null,
-      local_id: null,
+    item_mestre_id: item.item_mestre_id || null,
+    local_id: local.local_mestre_id || null,
 
       local_nome_snapshot: local.nome,
       item_descricao_snapshot: item.item,
