@@ -339,10 +339,6 @@ if (speechControls) {
   // API
   // =======================================================
 
-// =======================================================
-// API
-// =======================================================
-
 window.VistoriaFotos = {
 
   getFoto(row) {
@@ -383,4 +379,13 @@ window.VistoriaFotos = {
 
 };
 
+})();
+
+// Módulo isolado para incluir itens somente na vistoria atual.
+(function carregarModuloAdicionarItem() {
+  if (document.querySelector('script[data-vistoria-add-item]')) return;
+  const script = document.createElement('script');
+  script.src = 'vistoria-add-item.js?v=1';
+  script.dataset.vistoriaAddItem = 'true';
+  document.body.appendChild(script);
 })();
