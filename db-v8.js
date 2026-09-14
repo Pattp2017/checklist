@@ -190,16 +190,61 @@
       }
 
       const respostaItens = await fetch(
-        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}&select=id&limit=1`,
+        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}&select=id,status,observacao,responsavel_nc,data_nc,arquivar_foto,foto_path`,
         { method: 'GET', headers: getHeaders('return=representation') }
       );
+      
       const textoItens = await respostaItens.text();
-      if (!respostaItens.ok) throw new Error(textoItens || 'Erro ao verificar itens salvos.');
-      const itensSalvos = textoItens ? JSON.parse(textoItens) : [];
-
-      if (itensSalvos.length) {
-        alert('Este checklist já possui itens salvos e não será excluído por este botão.');
+      
+      if (!respostaItens.ok) {
+        throw new Error(
+          textoItens || 'Erro ao verificar os itens salvos.'
+        );
+      }
+      
+      const itensSalvos = textoItens
+        ? JSON.parse(textoItens)
+        : [];
+      
+      const possuiAlteracaoReal = itensSalvos.some(item => (
+        item.status !== 'C' ||
+        !!item.observacao ||
+        !!item.responsavel_nc ||
+        !!item.data_nc ||
+        item.arquivar_foto === true ||
+        !!item.foto_path
+      ));
+      
+      if (possuiAlteracaoReal) {
+        alert(
+          'Este checklist possui alterações registradas e não pode ser excluído como checklist iniciado por engano.'
+        );
         return false;
+      }
+      
+      /*
+       * Se foi apenas salvo com todos os itens no padrão C,
+       * elimina os itens automáticos antes de excluir a vistoria.
+       */
+      if (itensSalvos.length) {
+      
+        const respostaExcluirItens = await fetch(
+          `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}`,
+          {
+            method: 'DELETE',
+            headers: getHeaders('return=minimal')
+          }
+        );
+      
+        const textoExcluirItens =
+          await respostaExcluirItens.text();
+      
+        if (!respostaExcluirItens.ok) {
+          throw new Error(
+            textoExcluirItens ||
+            'Não foi possível excluir os itens do checklist.'
+          );
+        }
       }
 
       const respostaExcluir = await fetch(
