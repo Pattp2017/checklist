@@ -7,24 +7,25 @@
   <link rel="stylesheet" href="styles.css" />
   <style>
     .vistoria-nav {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin: 4px 0 14px;
-      padding: 10px 12px;
-      background: #fff;
-      border: 1px solid #d6e0ea;
-      border-radius: 8px;
+      justify-content: center;
+      min-height: 44px;
     }
     .btn-voltar {
-      border: 0;
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
       background: transparent;
-      color: #0b6aa6;
-      font: inherit;
-      font-weight: 700;
+      padding: 4px 10px;
+      font-size: 36px;
+      line-height: 1;
+      font-weight: 300;
+      color: #1f2937;
       cursor: pointer;
-      padding: 6px 4px;
-      white-space: nowrap;
     }
     .local-progresso {
       flex: 1;
@@ -78,7 +79,7 @@
   <center><h1>Checklist de Vistoria</h1></center>
 
   <div class="vistoria-nav">
-    <button id="btn-voltar-vistoria" class="btn-voltar" type="button" aria-label="Voltar">‹ Voltar</button>
+    <button id="btn-voltar-vistoria" class="btn-voltar" type="button" aria-label="Voltar">‹</button>
     <div id="local-progresso" class="local-progresso">Carregando locais...</div>
   </div>
 
