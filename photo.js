@@ -389,3 +389,12 @@ window.VistoriaFotos = {
   script.dataset.vistoriaAddItem = 'true';
   document.body.appendChild(script);
 })();
+
+// Módulo isolado para medida corretiva recomendada das N/C.
+(function carregarModuloMedidaCorretiva() {
+  if (document.querySelector('script[data-vistoria-medida-corretiva]')) return;
+  const script = document.createElement('script');
+  script.src = 'vistoria-medida-corretiva.js?v=1';
+  script.dataset.vistoriaMedidaCorretiva = 'true';
+  document.body.appendChild(script);
+})();
