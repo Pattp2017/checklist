@@ -167,7 +167,161 @@
       mostrarErro('Não foi possível carregar os modelos de inspeção.');
     }
   }
+async function criarSnapshotVistoria(vistoriaId, modeloId) {
+  const respostaLocais = await fetch(
+    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem&order=ordem.asc`,
+    { headers: checklistHeaders() }
+  );
 
+  const textoLocais = await respostaLocais.text();
+
+  if (!respostaLocais.ok) {
+    throw new Error(
+      textoLocais || 'Erro ao carregar os locais do modelo.'
+    );
+  }
+
+  const locais = textoLocais
+    ? JSON.parse(textoLocais)
+    : [];
+
+  const respostaItens = await fetch(
+    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_modelo_itens?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,modelo_local_id,item,ordem&order=ordem.asc`,
+    { headers: checklistHeaders() }
+  );
+
+  const textoItens = await respostaItens.text();
+
+  if (!respostaItens.ok) {
+    throw new Error(
+      textoItens || 'Erro ao carregar os itens do modelo.'
+    );
+  }
+
+  const itens = textoItens
+    ? JSON.parse(textoItens)
+    : [];
+
+  if (!locais.length) {
+    throw new Error(
+      'O modelo selecionado não possui locais ativos.'
+    );
+  }
+
+  if (!itens.length) {
+    throw new Error(
+      'O modelo selecionado não possui itens ativos.'
+    );
+  }
+
+  const locaisPorId = new Map(
+    locais.map(local => [local.id, local])
+  );
+
+  const ordemLocal = new Map(
+    locais.map((local, indice) => [
+      local.id,
+      Number.isFinite(Number(local.ordem))
+        ? Number(local.ordem)
+        : indice
+    ])
+  );
+
+  const itensOrdenados = [...itens].sort((a, b) => {
+    const localA =
+      ordemLocal.get(a.modelo_local_id) ?? 999999;
+
+    const localB =
+      ordemLocal.get(b.modelo_local_id) ?? 999999;
+
+    if (localA !== localB) {
+      return localA - localB;
+    }
+
+    return (
+      (Number(a.ordem) || 0) -
+      (Number(b.ordem) || 0)
+    );
+  });
+
+  const snapshot = itensOrdenados.map((item, indice) => {
+    const local = locaisPorId.get(item.modelo_local_id);
+
+    if (!local) {
+      throw new Error(
+        `O item "${item.item}" está vinculado a um local inválido.`
+      );
+    }
+
+    return {
+      vistoria_id: vistoriaId,
+
+      item_mestre_id: null,
+      local_id: null,
+
+      local_nome_snapshot: local.nome,
+      item_descricao_snapshot: item.item,
+
+      status: 'C',
+      observacao: null,
+
+      responsavel_nc: null,
+      data_nc: null,
+
+      ordem: indice + 1,
+
+      foto_path: null,
+      arquivar_foto: false
+    };
+  });
+
+  const respostaSnapshot = await fetch(
+    `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_vistoria_itens`,
+    {
+      method: 'POST',
+
+      headers: {
+        ...checklistHeaders(),
+        Prefer: 'return=minimal'
+      },
+
+      body: JSON.stringify(snapshot)
+    }
+  );
+
+  const textoSnapshot =
+    await respostaSnapshot.text();
+
+  if (!respostaSnapshot.ok) {
+    throw new Error(
+      textoSnapshot ||
+      'Erro ao criar a cópia do checklist para a vistoria.'
+    );
+  }
+}
+
+
+async function excluirVistoriaIncompleta(vistoriaId) {
+  try {
+    await fetch(
+      `${CHECKLIST_SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}`,
+      {
+        method: 'DELETE',
+
+        headers: {
+          ...checklistHeaders(),
+          Prefer: 'return=minimal'
+        }
+      }
+    );
+
+  } catch (erro) {
+    console.warn(
+      'Não foi possível remover a vistoria criada sem snapshot:',
+      erro
+    );
+  }
+}
   function mostrarSugestoesEmpresa(){
     const busca=normalizarTexto(empresaBusca.value);
     empresaIdEl.value='';
@@ -210,9 +364,12 @@
     if(!responsavelAuditoria){alert('Informe o responsável pela auditoria.');responsavelAuditoriaEl.focus();return}
     if(!dataAuditoria){alert('Informe a data da auditoria.');dataAuditoriaEl.focus();return}
 
-    btnIniciar.disabled=true;
-    btnIniciar.textContent='Iniciando...';
-    try{
+      btnIniciar.disabled = true;
+      btnIniciar.textContent = 'Iniciando...';
+      
+      let vistoriaCriadaId = null;
+      
+      try {
       const dados={
         empresa_id:empresaId,
         empresa_nome:empresaNome,
@@ -232,16 +389,47 @@
       if(!resposta.ok)throw new Error(texto||'Erro ao criar checklist.');
       const registros=JSON.parse(texto);
       if(!registros?.[0]?.id)throw new Error('O banco não retornou o ID da vistoria.');
-      const vistoria=registros[0];
-      localStorage.setItem('checklist_vistoria_id',vistoria.id);
-      localStorage.setItem('checklist_nova_vistoria','true');
-      localStorage.setItem('checklist_modelo_id',modelo.id);
-      localStorage.setItem('checklist_modelo_nome',modelo.nome);
-      location.href=`vistoria.html?vistoria_id=${encodeURIComponent(vistoria.id)}`;
-    }catch(erro){
-      console.error('Erro ao iniciar checklist:',erro);
-      alert('Não foi possível iniciar o checklist.\n\n'+(erro?.message||String(erro)));
-    }finally{
+     const vistoria = registros[0];
+
+vistoriaCriadaId = vistoria.id;
+
+await criarSnapshotVistoria(
+  vistoria.id,
+  modelo.id
+);
+
+localStorage.setItem('checklist_vistoria_id', vistoria.id);
+localStorage.setItem('checklist_nova_vistoria', 'true');
+localStorage.setItem('checklist_modelo_id', modelo.id);
+localStorage.setItem('checklist_modelo_nome', modelo.nome);
+
+location.href =
+  `vistoria.html?vistoria_id=${encodeURIComponent(vistoria.id)}`;
+
+} catch (erro) {
+
+  if (vistoriaCriadaId) {
+    await excluirVistoriaIncompleta(
+      vistoriaCriadaId
+    );
+  }
+
+  console.error(
+    'Erro ao iniciar checklist:',
+    erro
+  );
+
+  console.error(
+    'Erro ao iniciar checklist:',
+    erro
+  );
+
+  alert(
+    'Não foi possível iniciar o checklist.\n\n' +
+    (erro?.message || String(erro))
+  );
+
+} finally {
       btnIniciar.disabled=false;
       btnIniciar.textContent='Iniciar Checklist';
     }
