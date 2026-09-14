@@ -153,6 +153,77 @@
     finally { if (botao) { botao.disabled = false; botao.textContent = 'Concluir Checklist'; } }
   }
 
+  async function cancelarVistoria() {
+    const botao = document.getElementById('btn-cancelar-checklist');
+    const vistoriaId = getVistoriaId();
+    if (!vistoriaId) {
+      alert('Nenhuma vistoria em andamento foi encontrada.');
+      return false;
+    }
+
+    const confirmar = confirm('Deseja excluir este checklist em andamento?\n\nEsta ação apaga o checklist iniciado por engano e não poderá ser desfeita.');
+    if (!confirmar) return false;
+
+    try {
+      if (botao) { botao.disabled = true; botao.textContent = 'Excluindo...'; }
+
+      const respostaVistoria = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}?id=eq.${encodeURIComponent(vistoriaId)}&select=id,status`,
+        { method: 'GET', headers: getHeaders('return=representation') }
+      );
+      const textoVistoria = await respostaVistoria.text();
+      if (!respostaVistoria.ok) throw new Error(textoVistoria || 'Erro ao verificar a vistoria.');
+      const registros = textoVistoria ? JSON.parse(textoVistoria) : [];
+      const vistoria = registros[0] || null;
+
+      if (!vistoria) {
+        if (window.VistoriaPersist?.clearCurrent) window.VistoriaPersist.clearCurrent();
+        clearVistoriaId();
+        localStorage.removeItem('checklist_nova_vistoria');
+        window.location.href = 'index.html';
+        return true;
+      }
+
+      if (vistoria.status !== 'EM_ANDAMENTO') {
+        alert('Este checklist não pode ser excluído porque já foi finalizado.');
+        return false;
+      }
+
+      const respostaItens = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}&select=id&limit=1`,
+        { method: 'GET', headers: getHeaders('return=representation') }
+      );
+      const textoItens = await respostaItens.text();
+      if (!respostaItens.ok) throw new Error(textoItens || 'Erro ao verificar itens salvos.');
+      const itensSalvos = textoItens ? JSON.parse(textoItens) : [];
+
+      if (itensSalvos.length) {
+        alert('Este checklist já possui itens salvos e não será excluído por este botão.');
+        return false;
+      }
+
+      const respostaExcluir = await fetch(
+        `${SUPABASE_URL}/rest/v1/${TABELA_VISTORIAS}?id=eq.${encodeURIComponent(vistoriaId)}`,
+        { method: 'DELETE', headers: getHeaders('return=minimal') }
+      );
+      const textoExcluir = await respostaExcluir.text();
+      if (!respostaExcluir.ok) throw new Error(textoExcluir || 'Não foi possível excluir a vistoria.');
+
+      if (window.VistoriaPersist?.clearCurrent) window.VistoriaPersist.clearCurrent();
+      clearVistoriaId();
+      localStorage.removeItem('checklist_nova_vistoria');
+      alert('Checklist em andamento excluído.');
+      window.location.href = 'index.html';
+      return true;
+    } catch (erro) {
+      console.error('Erro ao excluir checklist:', erro);
+      alert('Não foi possível excluir o checklist.\n\n' + (erro?.message || String(erro)));
+      return false;
+    } finally {
+      if (botao) { botao.disabled = false; botao.textContent = 'Cancelar checklist'; }
+    }
+  }
+
   function novaVistoria() { if (window.VistoriaPersist?.clearCurrent) window.VistoriaPersist.clearCurrent(); clearVistoriaId(); console.log('Vistoria atual encerrada localmente.'); }
-  window.VistoriaDB = { salvarVistoria, concluirVistoria, salvarItens, uploadFoto, novaVistoria, getVistoriaId, setVistoriaId };
+  window.VistoriaDB = { salvarVistoria, concluirVistoria, cancelarVistoria, salvarItens, uploadFoto, novaVistoria, getVistoriaId, setVistoriaId };
 })();
