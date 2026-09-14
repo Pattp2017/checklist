@@ -178,31 +178,33 @@
     preencherMetadados(vistoria);
     return vistoria;
   }
-async function carregarSnapshotVistoria(vistoriaId) {
-  if (!vistoriaId) return [];
 
-  const itens = await buscarJson(
-    `${SUPABASE_URL}/rest/v1/checklist_vistoria_itens` +
-    `?vistoria_id=eq.${encodeURIComponent(vistoriaId)}` +
-    `&select=id,local_nome_snapshot,item_descricao_snapshot,status,observacao,responsavel_nc,data_nc,ordem,foto_path,arquivar_foto` +
-    `&order=ordem.asc`
-  );
+  async function carregarSnapshotVistoria(vistoriaId) {
+    if (!vistoriaId) return [];
 
-  return itens.map(item => ({
-    snapshot_id: item.id,
-    local_id: '',
-    item_id: '',
-    setor: item.local_nome_snapshot,
-    item: item.item_descricao_snapshot,
-    ordem: item.ordem || 0,
-    status: item.status || 'C',
-    observacao: item.observacao || '',
-    responsavel_nc: item.responsavel_nc || '',
-    data_nc: item.data_nc || '',
-    foto_path: item.foto_path || null,
-    arquivar_foto: item.arquivar_foto === true
-  }));
-}
+    const itens = await buscarJson(
+      `${SUPABASE_URL}/rest/v1/checklist_vistoria_itens` +
+      `?vistoria_id=eq.${encodeURIComponent(vistoriaId)}` +
+      `&select=id,local_nome_snapshot,item_descricao_snapshot,status,observacao,responsavel_nc,data_nc,ordem,foto_path,arquivar_foto` +
+      `&order=ordem.asc`
+    );
+
+    return itens.map(item => ({
+      snapshot_id: item.id,
+      local_id: '',
+      item_id: '',
+      setor: item.local_nome_snapshot,
+      item: item.item_descricao_snapshot,
+      ordem: item.ordem || 0,
+      status: item.status || 'C',
+      observacao: item.observacao || '',
+      responsavel_nc: item.responsavel_nc || '',
+      data_nc: item.data_nc || '',
+      foto_path: item.foto_path || null,
+      arquivar_foto: item.arquivar_foto === true
+    }));
+  }
+
   async function carregarModeloPersonalizado(modeloId) {
     const [locais, itens] = await Promise.all([
       buscarJson(`${SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem&order=ordem.asc`),
@@ -263,13 +265,11 @@ async function carregarSnapshotVistoria(vistoriaId) {
     selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
 
     const vistoria = await carregarVistoriaAtual();
-    
     const vistoriaId = getVistoriaId();
-    
     const snapshot = vistoriaId
       ? await carregarSnapshotVistoria(vistoriaId)
       : [];
-    
+
     if (snapshot.length) {
       initialData = snapshot;
     } else {
@@ -343,7 +343,10 @@ async function carregarSnapshotVistoria(vistoriaId) {
       const lbl = document.createElement('div'); lbl.className = 'item-label'; lbl.textContent = d.item; main.appendChild(lbl);
       const opts = document.createElement('div'); opts.className = 'options';
       const name = `radio_${idx}`;
-      const rC = createRadio(name, 'C', true), rNC = createRadio(name, 'NC', false), rNA = createRadio(name, 'NA', false);
+      const statusAtual = d.status || 'C';
+      const rC = createRadio(name, 'C', statusAtual === 'C');
+      const rNC = createRadio(name, 'NC', statusAtual === 'NC');
+      const rNA = createRadio(name, 'NA', statusAtual === 'NA');
       [[rC,'C'],[rNC,'N/C'],[rNA,'N/A']].forEach(([radio,texto]) => {
         const label = document.createElement('label'); label.appendChild(radio); label.appendChild(document.createTextNode(texto)); opts.appendChild(label);
       });
@@ -355,16 +358,21 @@ async function carregarSnapshotVistoria(vistoriaId) {
 
       const obs = document.createElement('textarea');
       obs.className = 'obs'; obs.placeholder = 'Observação (obrigatória quando N/C)'; obs.rows = 2;
+      obs.value = d.observacao || '';
       camposNC.appendChild(obs);
 
       const responsavel = document.createElement('input');
       responsavel.type = 'text'; responsavel.className = 'responsavel-nc'; responsavel.placeholder = 'Responsável pela adequação';
+      responsavel.value = d.responsavel_nc || '';
       camposNC.appendChild(responsavel);
 
       const dataNC = document.createElement('input');
       dataNC.type = 'date'; dataNC.className = 'data-nc';
+      dataNC.value = d.data_nc || '';
       camposNC.appendChild(dataNC);
       row.appendChild(camposNC);
+
+      atualizarEstadoLinha(row, camposNC, rNC);
 
       [rC, rNC, rNA].forEach(radio => radio.addEventListener('change', () => {
         atualizarEstadoLinha(row, camposNC, rNC);
