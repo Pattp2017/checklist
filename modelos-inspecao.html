@@ -3,330 +3,2251 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Modelos de Inspeção</title>
+
   <style>
-    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937}
-    .topo{background:#fff;border-bottom:1px solid #d9dee5;padding:16px;display:flex;align-items:center;gap:12px;position:sticky;top:0}
-    .voltar{border:0;background:transparent;font-size:28px;color:#163a5f;cursor:pointer}
-    .topo h1{margin:0;color:#163a5f;font-size:22px}.container{max-width:900px;margin:0 auto;padding:20px 14px 50px}
-    .card{background:#fff;border:1px solid #d9dee5;border-radius:12px;padding:16px;margin-bottom:14px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.campo label{display:block;margin-bottom:6px;font-weight:700;font-size:13px}
-    input,textarea{width:100%;border:1px solid #cbd2d9;border-radius:8px;padding:10px;font:inherit}textarea{min-height:76px;resize:vertical}
-    .acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.btn{border:0;border-radius:8px;padding:10px 14px;background:#163a5f;color:#fff;font-weight:700;cursor:pointer}
-    .btn.sec{background:#e8eef5;color:#163a5f}.btn.light{background:#fff;color:#163a5f;border:1px solid #d9dee5}
-    .lista{display:grid;gap:10px}.modelo{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #d9dee5;border-radius:10px;padding:12px}
-    .modelo strong{color:#163a5f}.meta{font-size:12px;color:#6b7280;margin-top:3px}.mini{border:1px solid #d9dee5;border-radius:7px;background:#fff;color:#163a5f;padding:7px 9px;font-weight:700;cursor:pointer}
-    .local{border:1px solid #d9dee5;border-radius:10px;margin-bottom:12px;overflow:hidden}.local-head{background:#f8fafc;padding:10px;display:flex;gap:8px}
-    .local-head input{font-weight:700}.local-head .grupo{display:flex;gap:5px}.icon{width:36px;height:36px;border:1px solid #d9dee5;border-radius:7px;background:#fff;cursor:pointer}
-    .itens{padding:10px}.item{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.item .grupo{display:flex;gap:5px}
-    .add{width:100%;border:1px dashed #9ca3af;border-radius:8px;background:#fff;color:#163a5f;padding:10px;font-weight:700;cursor:pointer}
-    .add-duplo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.add-duplo .add{width:100%}
-    .msg{display:none;margin-bottom:12px;padding:10px;border-radius:8px}.msg.ok{display:block;background:#ecfdf3;color:#166534}.msg.erro{display:block;background:#fff1f1;color:#b42318}
-    .oculto{display:none!important}.barra{display:flex;gap:8px;margin-bottom:14px}.barra input{flex:1}
-    @media(max-width:650px){.grid{grid-template-columns:1fr}.modelo{grid-template-columns:1fr}.item{grid-template-columns:1fr}.barra{flex-direction:column}.local-head{flex-direction:column}}
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    .topo {
+      background: #fff;
+      border-bottom: 1px solid #d9dee5;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .voltar {
+      border: 0;
+      background: transparent;
+      font-size: 28px;
+      color: #163a5f;
+      cursor: pointer;
+    }
+
+    .topo h1 {
+      margin: 0;
+      color: #163a5f;
+      font-size: 22px;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      padding: 20px 14px 50px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #d9dee5;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .campo label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid #cbd2d9;
+      border-radius: 8px;
+      padding: 10px;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 76px;
+      resize: vertical;
+    }
+
+    .acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      background: #163a5f;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .btn.sec {
+      background: #e8eef5;
+      color: #163a5f;
+    }
+
+    .btn.light {
+      background: #fff;
+      color: #163a5f;
+      border: 1px solid #d9dee5;
+    }
+
+    .lista {
+      display: grid;
+      gap: 10px;
+    }
+
+    .modelo {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid #d9dee5;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .modelo strong {
+      color: #163a5f;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 3px;
+    }
+
+    .mini {
+      border: 1px solid #d9dee5;
+      border-radius: 7px;
+      background: #fff;
+      color: #163a5f;
+      padding: 7px 9px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .local {
+      border: 1px solid #d9dee5;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .local-head {
+      background: #f8fafc;
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .local-titulo {
+      flex: 1;
+      font-weight: 700;
+      color: #163a5f;
+    }
+
+    .grupo {
+      display: flex;
+      gap: 5px;
+    }
+
+    .icon {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #d9dee5;
+      border-radius: 7px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .itens {
+      padding: 10px;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #edf0f3;
+      padding-bottom: 8px;
+    }
+
+    .item:last-child {
+      border-bottom: 0;
+    }
+
+    .item-texto {
+      line-height: 1.4;
+      padding: 7px 4px;
+    }
+
+    .add {
+      width: 100%;
+      border: 1px dashed #9ca3af;
+      border-radius: 8px;
+      background: #fff;
+      color: #163a5f;
+      padding: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .msg {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .msg.ok {
+      display: block;
+      background: #ecfdf3;
+      color: #166534;
+    }
+
+    .msg.erro {
+      display: block;
+      background: #fff1f1;
+      color: #b42318;
+    }
+
+    .oculto {
+      display: none !important;
+    }
+
+    .barra {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .barra input {
+      flex: 1;
+    }
+
+    .atalhos-cadastro {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    /* MODAL */
+
+    .modal-fundo {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 14px;
+    }
+
+    .modal-fundo.aberto {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 650px;
+      max-height: 85vh;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-topo {
+      padding: 14px 16px;
+      border-bottom: 1px solid #d9dee5;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-topo h2 {
+      margin: 0;
+      flex: 1;
+      color: #163a5f;
+      font-size: 18px;
+    }
+
+    .modal-fechar {
+      border: 0;
+      background: transparent;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .modal-corpo {
+      padding: 14px;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .modal-acoes {
+      padding: 12px 14px;
+      border-top: 1px solid #d9dee5;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .selecao-lista {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .selecao-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      border: 1px solid #d9dee5;
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .selecao-item:hover {
+      background: #f8fafc;
+    }
+
+    .selecao-item input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      margin-top: 1px;
+      flex: 0 0 auto;
+    }
+
+    .selecao-item span {
+      line-height: 1.4;
+    }
+
+    .vazio {
+      color: #6b7280;
+      padding: 15px 5px;
+      text-align: center;
+    }
+
+    .badge-legado {
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 10px;
+      background: #fff7d6;
+      color: #7a5b00;
+      margin-left: 6px;
+      font-weight: 400;
+    }
+
+    @media(max-width:650px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modelo {
+        grid-template-columns: 1fr;
+      }
+
+      .barra {
+        flex-direction: column;
+      }
+
+      .local-head {
+        align-items: flex-start;
+      }
+
+      .item {
+        grid-template-columns: 1fr;
+      }
+
+      .grupo {
+        width: 100%;
+      }
+
+      .grupo .icon {
+        flex: 1;
+      }
+    }
   </style>
 </head>
+
 <body>
+
 <header class="topo">
   <button class="voltar" id="btn-voltar" type="button">‹</button>
   <h1>Modelos de Inspeção</h1>
 </header>
 
 <main class="container">
+
   <div id="msg" class="msg"></div>
 
+  <!-- LISTAGEM -->
+
   <section id="lista-tela">
+
+    <div class="atalhos-cadastro">
+      <button class="btn sec" id="btn-cadastro-locais" type="button">
+        Cadastro de locais
+      </button>
+
+      <button class="btn sec" id="btn-cadastro-itens" type="button">
+        Cadastro de itens
+      </button>
+    </div>
+
     <div class="barra">
-      <input id="busca" type="search" placeholder="Buscar modelo...">
-      <button class="btn" id="novo" type="button">+ Novo modelo</button>
+      <input
+        id="busca"
+        type="search"
+        placeholder="Buscar modelo..."
+      >
+
+      <button class="btn" id="novo" type="button">
+        + Novo modelo
+      </button>
     </div>
 
     <div class="card">
-      <div id="lista" class="lista">Carregando...</div>
+      <div id="lista" class="lista">
+        Carregando...
+      </div>
     </div>
+
   </section>
 
+
+  <!-- EDITOR -->
+
   <section id="editor" class="oculto">
+
     <div class="card">
-      <h2 id="titulo-editor">Novo modelo</h2>
+
+      <h2 id="titulo-editor">
+        Novo modelo
+      </h2>
 
       <div class="grid">
+
         <div class="campo">
           <label for="nome">Nome *</label>
-          <input id="nome" type="text" placeholder="Ex.: Inspeção de Armazém de Café">
+
+          <input
+            id="nome"
+            type="text"
+            placeholder="Ex.: Inspeção de Armazém de Café"
+          >
         </div>
+
         <div class="campo">
           <label for="categoria">Categoria</label>
-          <input id="categoria" type="text" placeholder="Ex.: SST">
+
+          <input
+            id="categoria"
+            type="text"
+            placeholder="Ex.: SST"
+          >
         </div>
+
       </div>
 
-      <div class="campo" style="margin-top:12px">
-        <label for="descricao">Descrição</label>
-        <textarea id="descricao" placeholder="Finalidade do modelo"></textarea>
+      <div
+        class="campo"
+        style="margin-top:12px"
+      >
+
+        <label for="descricao">
+          Descrição
+        </label>
+
+        <textarea
+          id="descricao"
+          placeholder="Finalidade do modelo"
+        ></textarea>
+
       </div>
 
       <div class="acoes">
-        <button class="btn sec" id="add-local" type="button">+ Adicionar local</button>
+
+        <button
+          class="btn sec"
+          id="add-local"
+          type="button"
+        >
+          + Adicionar locais
+        </button>
+
       </div>
+
     </div>
 
     <div id="locais"></div>
 
     <div class="acoes">
-      <button class="btn" id="salvar" type="button">Salvar modelo</button>
-      <button class="btn light" id="cancelar" type="button">Cancelar</button>
+
+      <button
+        class="btn"
+        id="salvar"
+        type="button"
+      >
+        Salvar modelo
+      </button>
+
+      <button
+        class="btn light"
+        id="cancelar"
+        type="button"
+      >
+        Cancelar
+      </button>
+
     </div>
+
   </section>
+
 </main>
 
+
+<!-- MODAL SELEÇÃO -->
+
+<div id="modal-fundo" class="modal-fundo">
+
+  <div class="modal">
+
+    <div class="modal-topo">
+
+      <h2 id="modal-titulo">
+        Selecionar
+      </h2>
+
+      <button
+        class="modal-fechar"
+        id="modal-fechar"
+        type="button"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div class="modal-corpo">
+
+      <input
+        id="modal-busca"
+        type="search"
+        placeholder="Buscar..."
+      >
+
+      <div
+        id="modal-lista"
+        class="selecao-lista"
+      ></div>
+
+    </div>
+
+    <div class="modal-acoes">
+
+      <button
+        class="btn light"
+        id="modal-cancelar"
+        type="button"
+      >
+        Cancelar
+      </button>
+
+      <button
+        class="btn"
+        id="modal-aplicar"
+        type="button"
+      >
+        Aplicar
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
 <script>
+
 (() => {
-  const SUPABASE_URL='https://dbleblnwolbbxtscjxif.supabase.co';
-  const SUPABASE_KEY='sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
 
-  const listaTela=document.getElementById('lista-tela');
-  const editor=document.getElementById('editor');
-  const listaEl=document.getElementById('lista');
-  const msgEl=document.getElementById('msg');
-  const buscaEl=document.getElementById('busca');
-  const nomeEl=document.getElementById('nome');
-  const categoriaEl=document.getElementById('categoria');
-  const descricaoEl=document.getElementById('descricao');
-  const locaisEl=document.getElementById('locais');
+  const SUPABASE_URL =
+    'https://dbleblnwolbbxtscjxif.supabase.co';
 
-  let modelos=[];
-  let modeloId=null;
-  let locais=[];
+  const SUPABASE_KEY =
+    'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
 
-  function headers(prefer){
-    const h={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',Accept:'application/json'};
-    if(prefer) h.Prefer=prefer;
+
+  const listaTela =
+    document.getElementById('lista-tela');
+
+  const editor =
+    document.getElementById('editor');
+
+  const listaEl =
+    document.getElementById('lista');
+
+  const msgEl =
+    document.getElementById('msg');
+
+  const buscaEl =
+    document.getElementById('busca');
+
+  const nomeEl =
+    document.getElementById('nome');
+
+  const categoriaEl =
+    document.getElementById('categoria');
+
+  const descricaoEl =
+    document.getElementById('descricao');
+
+  const locaisEl =
+    document.getElementById('locais');
+
+
+  const modalFundo =
+    document.getElementById('modal-fundo');
+
+  const modalTitulo =
+    document.getElementById('modal-titulo');
+
+  const modalBusca =
+    document.getElementById('modal-busca');
+
+  const modalLista =
+    document.getElementById('modal-lista');
+
+
+  let modelos = [];
+
+  let modeloId = null;
+
+  let locais = [];
+
+  let locaisMestre = [];
+
+  let itensMestre = [];
+
+
+  let modalTipo = null;
+
+  let modalLocalIndex = null;
+
+
+  function headers(prefer) {
+
+    const h = {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    };
+
+    if (prefer) {
+      h.Prefer = prefer;
+    }
+
     return h;
   }
 
-  async function api(path,options={}){
-    const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{...options,headers:{...headers(options.prefer),...(options.headers||{})}});
-    const t=await r.text();
-    if(!r.ok) throw new Error(t||('Erro '+r.status));
-    if(!t) return null;
-    try{return JSON.parse(t)}catch{return t}
+
+  async function api(path, options = {}) {
+
+    const r = await fetch(
+      SUPABASE_URL + '/rest/v1/' + path,
+      {
+        ...options,
+        headers: {
+          ...headers(options.prefer),
+          ...(options.headers || {})
+        }
+      }
+    );
+
+    const t = await r.text();
+
+    if (!r.ok) {
+      throw new Error(
+        t || ('Erro ' + r.status)
+      );
+    }
+
+    if (!t) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(t);
+    } catch {
+      return t;
+    }
   }
 
-  function aviso(texto,tipo='ok'){
-    msgEl.className='msg '+tipo; msgEl.textContent=texto;
-    clearTimeout(aviso.timer); aviso.timer=setTimeout(()=>{msgEl.className='msg';msgEl.textContent=''},3500);
+
+  function aviso(texto, tipo = 'ok') {
+
+    msgEl.className =
+      'msg ' + tipo;
+
+    msgEl.textContent =
+      texto;
+
+    clearTimeout(aviso.timer);
+
+    aviso.timer = setTimeout(() => {
+
+      msgEl.className = 'msg';
+      msgEl.textContent = '';
+
+    }, 3500);
   }
 
-  function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
-  function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
 
-  async function carregar(){
-    try{
-      modelos=await api('checklist_modelos?select=*&ativo=eq.true&order=nome.asc')||[];
+  function esc(v) {
+
+    return String(v ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+
+  function norm(v) {
+
+    return String(v || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+
+  async function carregarCadastros() {
+
+    const [lr, ir] =
+      await Promise.all([
+
+        api(
+          'checklist_locais' +
+          '?ativo=eq.true' +
+          '&select=id,nome,ordem' +
+          '&order=ordem.asc.nullslast,nome.asc'
+        ),
+
+        api(
+          'checklist_itens_mestre' +
+          '?ativo=eq.true' +
+          '&select=id,descricao' +
+          '&order=descricao.asc'
+        )
+
+      ]);
+
+    locaisMestre =
+      lr || [];
+
+    itensMestre =
+      ir || [];
+  }
+
+
+  async function carregar() {
+
+    try {
+
+      await carregarCadastros();
+
+      modelos =
+        await api(
+          'checklist_modelos' +
+          '?select=*' +
+          '&ativo=eq.true' +
+          '&order=nome.asc'
+        ) || [];
+
       renderLista();
-    }catch(e){listaEl.textContent='Erro ao carregar modelos.';aviso(e.message,'erro')}
+
+    } catch (e) {
+
+      console.error(e);
+
+      listaEl.textContent =
+        'Erro ao carregar modelos.';
+
+      aviso(
+        e.message,
+        'erro'
+      );
+    }
   }
 
-  function renderLista(){
-    const q=norm(buscaEl.value);
-    const arr=modelos.filter(m=>!q||norm(m.nome).includes(q)||norm(m.categoria).includes(q)||norm(m.descricao).includes(q));
-    if(!arr.length){listaEl.innerHTML='<div>Nenhum modelo encontrado.</div>';return}
-    listaEl.innerHTML=arr.map(m=>`
-      <div class="modelo">
-        <div>
-          <strong>${esc(m.nome)}</strong>
-          <div class="meta">${esc(m.categoria||'Sem categoria')}${m.descricao?' • '+esc(m.descricao):''}</div>
-        </div>
-        <div>
-          <button class="mini" data-acao="editar" data-id="${m.id}">Editar</button>
-          <button class="mini" data-acao="duplicar" data-id="${m.id}">Duplicar</button>
-          <button class="mini" data-acao="desativar" data-id="${m.id}">Desativar</button>
-        </div>
-      </div>`).join('');
-  }
 
-  function abrirEditor(){listaTela.classList.add('oculto'); editor.classList.remove('oculto')}
-  function abrirLista(){editor.classList.add('oculto'); listaTela.classList.remove('oculto')}
+  function renderLista() {
 
-  function novo(){
-    modeloId=null; nomeEl.value=''; categoriaEl.value=''; descricaoEl.value=''; locais=[];
-    document.getElementById('titulo-editor').textContent='Novo modelo';
-    adicionarLocal(); abrirEditor();
-  }
+    const q =
+      norm(buscaEl.value);
 
-  function adicionarLocal(){locais.push({nome:'',itens:[]}); renderLocais()}
+    const arr =
+      modelos.filter(m =>
+        !q ||
+        norm(m.nome).includes(q) ||
+        norm(m.categoria).includes(q) ||
+        norm(m.descricao).includes(q)
+      );
 
-  function focarLocal(indice){
-    requestAnimationFrame(()=>{
-      const el=locaisEl.querySelector(`.local-nome[data-local="${indice}"]`);
-      if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}
-    });
-  }
 
-  function focarItem(localIndex,itemIndex){
-    requestAnimationFrame(()=>{
-      const el=locaisEl.querySelector(`.item-texto[data-local="${localIndex}"][data-item="${itemIndex}"]`);
-      if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}
-    });
-  }
+    if (!arr.length) {
 
-  function renderLocais(){
-    if(!locais.length){locaisEl.innerHTML='<div class="card">Nenhum local adicionado.</div>';return}
-    locaisEl.innerHTML=locais.map((l,li)=>`
-      <div class="local">
-        <div class="local-head">
-          <input data-local="${li}" class="local-nome" value="${esc(l.nome)}" placeholder="Nome do local / setor">
-          <div class="grupo">
-            <button class="icon" data-acao="lcima" data-local="${li}">↑</button>
-            <button class="icon" data-acao="lbaixo" data-local="${li}">↓</button>
-            <button class="icon" data-acao="lrem" data-local="${li}">×</button>
-          </div>
-        </div>
-        <div class="itens">
-          ${l.itens.map((it,ii)=>`
-            <div class="item">
-              <textarea data-local="${li}" data-item="${ii}" class="item-texto" placeholder="Descrição do item">${esc(it)}</textarea>
-              <div class="grupo">
-                <button class="icon" data-acao="icima" data-local="${li}" data-item="${ii}">↑</button>
-                <button class="icon" data-acao="ibaixo" data-local="${li}" data-item="${ii}">↓</button>
-                <button class="icon" data-acao="irem" data-local="${li}" data-item="${ii}">×</button>
-              </div>
-            </div>`).join('')}
-          <div class="add-duplo">
-            <button class="add" data-acao="ladd" data-local="${li}">+ Adicionar local</button>
-            <button class="add" data-acao="iadd" data-local="${li}">+ Adicionar item</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }
+      listaEl.innerHTML =
+        '<div>Nenhum modelo encontrado.</div>';
 
-  function capturar(){
-    document.querySelectorAll('.local-nome').forEach(el=>{locais[+el.dataset.local].nome=el.value});
-    document.querySelectorAll('.item-texto').forEach(el=>{locais[+el.dataset.local].itens[+el.dataset.item]=el.value});
-  }
-
-  function mover(arr,de,para){if(para<0||para>=arr.length)return;const [x]=arr.splice(de,1);arr.splice(para,0,x)}
-
-  async function carregarEstrutura(id){
-    const [mr,lr,ir]=await Promise.all([
-      api(`checklist_modelos?id=eq.${id}&select=*`),
-      api(`checklist_modelo_locais?modelo_id=eq.${id}&ativo=eq.true&select=*&order=ordem.asc`),
-      api(`checklist_modelo_itens?modelo_id=eq.${id}&ativo=eq.true&select=*&order=ordem.asc`)
-    ]);
-    const m=mr?.[0]; if(!m) throw new Error('Modelo não encontrado.');
-    const porLocal=new Map();
-    (ir||[]).forEach(i=>{const k=i.modelo_local_id;if(!porLocal.has(k))porLocal.set(k,[]);porLocal.get(k).push(i.item)});
-    return {m,locais:(lr||[]).map(l=>({nome:l.nome,itens:porLocal.get(l.id)||[]}))};
-  }
-
-  async function editar(id,duplicar=false){
-    try{
-      const d=await carregarEstrutura(id);
-      modeloId=duplicar?null:id;
-      nomeEl.value=duplicar?d.m.nome+' - Cópia':d.m.nome;
-      categoriaEl.value=d.m.categoria||'';
-      descricaoEl.value=d.m.descricao||'';
-      locais=d.locais;
-      document.getElementById('titulo-editor').textContent=duplicar?'Duplicar modelo':'Editar modelo';
-      renderLocais(); abrirEditor();
-    }catch(e){aviso(e.message,'erro')}
-  }
-
-  async function salvar(){
-    capturar();
-    if(!nomeEl.value.trim()){aviso('Informe o nome do modelo.','erro');return}
-    if(!locais.length){aviso('Adicione pelo menos um local.','erro');return}
-    for(const l of locais){
-      if(!l.nome.trim()){aviso('Todos os locais precisam de nome.','erro');return}
-      if(!l.itens.length){aviso(`Adicione ao menos um item em "${l.nome}".`,'erro');return}
-      if(l.itens.some(i=>!String(i).trim())){aviso(`Há item vazio em "${l.nome}".`,'erro');return}
+      return;
     }
 
-    const btn=document.getElementById('salvar');btn.disabled=true;btn.textContent='Salvando...';
-    try{
-      let id=modeloId;
-      const dados={nome:nomeEl.value.trim(),descricao:descricaoEl.value.trim()||null,categoria:categoriaEl.value.trim()||null,ativo:true,atualizado_em:new Date().toISOString()};
 
-      if(id){
-        await api(`checklist_modelos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(dados),prefer:'return=minimal'});
-        await api(`checklist_modelo_itens?modelo_id=eq.${id}`,{method:'DELETE',prefer:'return=minimal'});
-        await api(`checklist_modelo_locais?modelo_id=eq.${id}`,{method:'DELETE',prefer:'return=minimal'});
-      }else{
-        const r=await api('checklist_modelos',{method:'POST',body:JSON.stringify(dados),prefer:'return=representation'});
-        id=r?.[0]?.id;if(!id)throw new Error('ID do modelo não retornado.');
+    listaEl.innerHTML =
+      arr.map(m => `
+
+        <div class="modelo">
+
+          <div>
+
+            <strong>
+              ${esc(m.nome)}
+            </strong>
+
+            <div class="meta">
+
+              ${esc(
+                m.categoria ||
+                'Sem categoria'
+              )}
+
+              ${
+                m.descricao
+                  ? ' • ' + esc(m.descricao)
+                  : ''
+              }
+
+            </div>
+
+          </div>
+
+          <div>
+
+            <button
+              class="mini"
+              data-acao="editar"
+              data-id="${m.id}"
+            >
+              Editar
+            </button>
+
+            <button
+              class="mini"
+              data-acao="duplicar"
+              data-id="${m.id}"
+            >
+              Duplicar
+            </button>
+
+            <button
+              class="mini"
+              data-acao="desativar"
+              data-id="${m.id}"
+            >
+              Desativar
+            </button>
+
+          </div>
+
+        </div>
+
+      `).join('');
+  }
+
+
+  function abrirEditor() {
+
+    listaTela.classList.add(
+      'oculto'
+    );
+
+    editor.classList.remove(
+      'oculto'
+    );
+  }
+
+
+  function abrirLista() {
+
+    editor.classList.add(
+      'oculto'
+    );
+
+    listaTela.classList.remove(
+      'oculto'
+    );
+  }
+
+
+  function novo() {
+
+    modeloId = null;
+
+    nomeEl.value = '';
+
+    categoriaEl.value = '';
+
+    descricaoEl.value = '';
+
+    locais = [];
+
+    document
+      .getElementById('titulo-editor')
+      .textContent =
+        'Novo modelo';
+
+    renderLocais();
+
+    abrirEditor();
+  }
+
+
+  function mover(arr, de, para) {
+
+    if (
+      para < 0 ||
+      para >= arr.length
+    ) {
+      return;
+    }
+
+    const [x] =
+      arr.splice(de, 1);
+
+    arr.splice(
+      para,
+      0,
+      x
+    );
+  }
+
+
+  function renderLocais() {
+
+    if (!locais.length) {
+
+      locaisEl.innerHTML = `
+
+        <div class="card">
+
+          Nenhum local selecionado.
+
+          <div style="margin-top:10px">
+
+            <button
+              class="btn sec"
+              type="button"
+              data-acao="abrir-locais"
+            >
+              + Adicionar locais
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+      return;
+    }
+
+
+    locaisEl.innerHTML =
+      locais.map((l, li) => `
+
+        <div
+          class="local"
+          data-local="${li}"
+        >
+
+          <div class="local-head">
+
+            <div class="local-titulo">
+
+              ${esc(l.nome)}
+
+              ${
+                !l.local_mestre_id
+                  ? '<span class="badge-legado">legado</span>'
+                  : ''
+              }
+
+            </div>
+
+            <div class="grupo">
+
+              <button
+                class="icon"
+                data-acao="lcima"
+                data-local="${li}"
+                title="Mover para cima"
+              >
+                ↑
+              </button>
+
+              <button
+                class="icon"
+                data-acao="lbaixo"
+                data-local="${li}"
+                title="Mover para baixo"
+              >
+                ↓
+              </button>
+
+              <button
+                class="icon"
+                data-acao="lrem"
+                data-local="${li}"
+                title="Remover do modelo"
+              >
+                ×
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div class="itens">
+
+            ${
+              l.itens.length
+                ? l.itens.map(
+                    (it, ii) => `
+
+                <div class="item">
+
+                  <div class="item-texto">
+
+                    ${esc(it.texto)}
+
+                    ${
+                      !it.item_mestre_id
+                        ? '<span class="badge-legado">legado</span>'
+                        : ''
+                    }
+
+                  </div>
+
+                  <div class="grupo">
+
+                    <button
+                      class="icon"
+                      data-acao="icima"
+                      data-local="${li}"
+                      data-item="${ii}"
+                      title="Mover item para cima"
+                    >
+                      ↑
+                    </button>
+
+                    <button
+                      class="icon"
+                      data-acao="ibaixo"
+                      data-local="${li}"
+                      data-item="${ii}"
+                      title="Mover item para baixo"
+                    >
+                      ↓
+                    </button>
+
+                    <button
+                      class="icon"
+                      data-acao="irem"
+                      data-local="${li}"
+                      data-item="${ii}"
+                      title="Remover item do modelo"
+                    >
+                      ×
+                    </button>
+
+                  </div>
+
+                </div>
+
+              `).join('')
+                : '<div class="vazio">Nenhum item selecionado neste local.</div>'
+            }
+
+
+            <button
+              class="add"
+              data-acao="selecionar-itens"
+              data-local="${li}"
+              type="button"
+            >
+              + Adicionar itens
+            </button>
+
+          </div>
+
+        </div>
+
+      `).join('');
+  }
+
+
+  async function carregarEstrutura(id) {
+
+    const [mr, lr, ir] =
+      await Promise.all([
+
+        api(
+          `checklist_modelos` +
+          `?id=eq.${id}` +
+          `&select=*`
+        ),
+
+        api(
+          `checklist_modelo_locais` +
+          `?modelo_id=eq.${id}` +
+          `&ativo=eq.true` +
+          `&select=*` +
+          `&order=ordem.asc`
+        ),
+
+        api(
+          `checklist_modelo_itens` +
+          `?modelo_id=eq.${id}` +
+          `&ativo=eq.true` +
+          `&select=*` +
+          `&order=ordem.asc`
+        )
+
+      ]);
+
+
+    const m =
+      mr?.[0];
+
+    if (!m) {
+
+      throw new Error(
+        'Modelo não encontrado.'
+      );
+    }
+
+
+    const porLocal =
+      new Map();
+
+
+    (ir || []).forEach(i => {
+
+      const k =
+        i.modelo_local_id;
+
+      if (!porLocal.has(k)) {
+
+        porLocal.set(
+          k,
+          []
+        );
       }
 
-      for(let li=0;li<locais.length;li++){
-        const l=locais[li];
-        const lr=await api('checklist_modelo_locais',{method:'POST',body:JSON.stringify({modelo_id:id,nome:l.nome.trim(),ordem:li+1,ativo:true}),prefer:'return=representation'});
-        const lid=lr?.[0]?.id;if(!lid)throw new Error('ID do local não retornado.');
-        await api('checklist_modelo_itens',{method:'POST',body:JSON.stringify(l.itens.map((txt,ii)=>({modelo_id:id,modelo_local_id:lid,local_id:null,item:String(txt).trim(),ordem:ii+1,ativo:true}))),prefer:'return=minimal'});
+      porLocal
+        .get(k)
+        .push({
+
+          item_mestre_id:
+            i.item_mestre_id || null,
+
+          texto:
+            i.item
+
+        });
+    });
+
+
+    return {
+
+      m,
+
+      locais:
+        (lr || []).map(l => ({
+
+          local_mestre_id:
+            l.local_mestre_id || null,
+
+          nome:
+            l.nome,
+
+          itens:
+            porLocal.get(l.id) || []
+
+        }))
+
+    };
+  }
+
+
+  async function editar(
+    id,
+    duplicar = false
+  ) {
+
+    try {
+
+      const d =
+        await carregarEstrutura(id);
+
+
+      modeloId =
+        duplicar
+          ? null
+          : id;
+
+
+      nomeEl.value =
+        duplicar
+          ? d.m.nome + ' - Cópia'
+          : d.m.nome;
+
+
+      categoriaEl.value =
+        d.m.categoria || '';
+
+
+      descricaoEl.value =
+        d.m.descricao || '';
+
+
+      locais =
+        d.locais;
+
+
+      document
+        .getElementById(
+          'titulo-editor'
+        )
+        .textContent =
+          duplicar
+            ? 'Duplicar modelo'
+            : 'Editar modelo';
+
+
+      renderLocais();
+
+      abrirEditor();
+
+    } catch (e) {
+
+      console.error(e);
+
+      aviso(
+        e.message,
+        'erro'
+      );
+    }
+  }
+
+
+  function abrirModalLocais() {
+
+    modalTipo =
+      'locais';
+
+    modalLocalIndex =
+      null;
+
+    modalTitulo.textContent =
+      'Selecionar locais';
+
+    modalBusca.value = '';
+
+    renderModal();
+
+    modalFundo.classList.add(
+      'aberto'
+    );
+
+    modalBusca.focus();
+  }
+
+
+  function abrirModalItens(li) {
+
+    modalTipo =
+      'itens';
+
+    modalLocalIndex =
+      li;
+
+    modalTitulo.textContent =
+      'Selecionar itens';
+
+    modalBusca.value = '';
+
+    renderModal();
+
+    modalFundo.classList.add(
+      'aberto'
+    );
+
+    modalBusca.focus();
+  }
+
+
+  function fecharModal() {
+
+    modalFundo.classList.remove(
+      'aberto'
+    );
+
+    modalTipo =
+      null;
+
+    modalLocalIndex =
+      null;
+  }
+
+
+  function renderModal() {
+
+    const q =
+      norm(modalBusca.value);
+
+
+    if (modalTipo === 'locais') {
+
+      const selecionados =
+        new Set(
+          locais
+            .filter(l => l.local_mestre_id)
+            .map(l => l.local_mestre_id)
+        );
+
+
+      const arr =
+        locaisMestre.filter(l =>
+          !q ||
+          norm(l.nome).includes(q)
+        );
+
+
+      if (!arr.length) {
+
+        modalLista.innerHTML =
+          '<div class="vazio">Nenhum local encontrado.</div>';
+
+        return;
       }
 
-      aviso(modeloId?'Modelo atualizado.':'Modelo criado.');
-      abrirLista(); await carregar();
-    }catch(e){console.error(e);aviso('Erro ao salvar: '+e.message,'erro')}
-    finally{btn.disabled=false;btn.textContent='Salvar modelo'}
+
+      modalLista.innerHTML =
+        arr.map(l => `
+
+          <label class="selecao-item">
+
+            <input
+              type="checkbox"
+              value="${l.id}"
+              ${selecionados.has(l.id) ? 'checked' : ''}
+            >
+
+            <span>
+              ${esc(l.nome)}
+            </span>
+
+          </label>
+
+        `).join('');
+
+      return;
+    }
+
+
+    if (
+      modalTipo === 'itens' &&
+      modalLocalIndex !== null
+    ) {
+
+      const local =
+        locais[modalLocalIndex];
+
+
+      const selecionados =
+        new Set(
+          local.itens
+            .filter(i => i.item_mestre_id)
+            .map(i => i.item_mestre_id)
+        );
+
+
+      const arr =
+        itensMestre.filter(i =>
+          !q ||
+          norm(i.descricao).includes(q)
+        );
+
+
+      if (!arr.length) {
+
+        modalLista.innerHTML =
+          '<div class="vazio">Nenhum item encontrado.</div>';
+
+        return;
+      }
+
+
+      modalLista.innerHTML =
+        arr.map(i => `
+
+          <label class="selecao-item">
+
+            <input
+              type="checkbox"
+              value="${i.id}"
+              ${selecionados.has(i.id) ? 'checked' : ''}
+            >
+
+            <span>
+              ${esc(i.descricao)}
+            </span>
+
+          </label>
+
+        `).join('');
+    }
   }
 
-  async function desativar(id){
-    const m=modelos.find(x=>x.id===id); if(!m)return;
-    if(!confirm(`Desativar "${m.nome}"?`))return;
-    try{
-      await api(`checklist_modelos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({ativo:false,atualizado_em:new Date().toISOString()}),prefer:'return=minimal'});
-      await carregar(); aviso('Modelo desativado.');
-    }catch(e){aviso(e.message,'erro')}
+
+  function aplicarModal() {
+
+    const marcados =
+      Array.from(
+        modalLista.querySelectorAll(
+          'input[type="checkbox"]:checked'
+        )
+      ).map(c => c.value);
+
+
+    if (modalTipo === 'locais') {
+
+      const existentesLegados =
+        locais.filter(
+          l => !l.local_mestre_id
+        );
+
+
+      const novos =
+        marcados
+          .map(id =>
+            locaisMestre.find(
+              l => l.id === id
+            )
+          )
+          .filter(Boolean)
+          .map(l => {
+
+            const existente =
+              locais.find(
+                x =>
+                  x.local_mestre_id === l.id
+              );
+
+
+            if (existente) {
+
+              return existente;
+            }
+
+
+            return {
+
+              local_mestre_id:
+                l.id,
+
+              nome:
+                l.nome,
+
+              itens:
+                []
+
+            };
+
+          });
+
+
+      locais = [
+        ...existentesLegados,
+        ...novos
+      ];
+
+
+      renderLocais();
+
+      fecharModal();
+
+      return;
+    }
+
+
+    if (
+      modalTipo === 'itens' &&
+      modalLocalIndex !== null
+    ) {
+
+      const local =
+        locais[modalLocalIndex];
+
+
+      const legados =
+        local.itens.filter(
+          i => !i.item_mestre_id
+        );
+
+
+      const novos =
+        marcados
+          .map(id =>
+            itensMestre.find(
+              i => i.id === id
+            )
+          )
+          .filter(Boolean)
+          .map(i => {
+
+            const existente =
+              local.itens.find(
+                x =>
+                  x.item_mestre_id === i.id
+              );
+
+
+            if (existente) {
+
+              return existente;
+            }
+
+
+            return {
+
+              item_mestre_id:
+                i.id,
+
+              texto:
+                i.descricao
+
+            };
+
+          });
+
+
+      local.itens = [
+        ...legados,
+        ...novos
+      ];
+
+
+      renderLocais();
+
+      fecharModal();
+    }
   }
 
-  document.getElementById('btn-voltar').onclick=()=>editor.classList.contains('oculto')?location.href='index.html':abrirLista();
-  document.getElementById('novo').onclick=novo;
-  document.getElementById('add-local').onclick=()=>{
-    capturar();
-    const novoIndex=locais.length;
-    locais.push({nome:'',itens:[]});
-    renderLocais();
-    focarLocal(novoIndex);
-  };
-  document.getElementById('cancelar').onclick=abrirLista;
-  document.getElementById('salvar').onclick=salvar;
-  buscaEl.oninput=renderLista;
 
-  listaEl.addEventListener('click',e=>{
-    const b=e.target.closest('button[data-acao]'); if(!b)return;
-    if(b.dataset.acao==='editar')editar(b.dataset.id,false);
-    if(b.dataset.acao==='duplicar')editar(b.dataset.id,true);
-    if(b.dataset.acao==='desativar')desativar(b.dataset.id);
-  });
+  async function salvar() {
 
-  locaisEl.addEventListener('click',e=>{
-    const b=e.target.closest('button[data-acao]');if(!b)return;
-    capturar();
-    const li=+b.dataset.local, ii=+b.dataset.item, a=b.dataset.acao;
-    let foco=null;
+    if (!nomeEl.value.trim()) {
 
-    if(a==='lcima')mover(locais,li,li-1);
-    if(a==='lbaixo')mover(locais,li,li+1);
-    if(a==='lrem'&&confirm('Remover este local e seus itens?'))locais.splice(li,1);
-    if(a==='ladd'){
-      const novoIndex=li+1;
-      locais.splice(novoIndex,0,{nome:'',itens:[]});
-      foco=()=>focarLocal(novoIndex);
+      aviso(
+        'Informe o nome do modelo.',
+        'erro'
+      );
+
+      return;
     }
-    if(a==='iadd'){
-      locais[li].itens.push('');
-      const novoItem=locais[li].itens.length-1;
-      foco=()=>focarItem(li,novoItem);
+
+
+    if (!locais.length) {
+
+      aviso(
+        'Selecione pelo menos um local.',
+        'erro'
+      );
+
+      return;
     }
-    if(a==='icima')mover(locais[li].itens,ii,ii-1);
-    if(a==='ibaixo')mover(locais[li].itens,ii,ii+1);
-    if(a==='irem')locais[li].itens.splice(ii,1);
-    renderLocais();
-    if(foco)foco();
-  });
+
+
+    for (const l of locais) {
+
+      if (!l.itens.length) {
+
+        aviso(
+          `Selecione ao menos um item em "${l.nome}".`,
+          'erro'
+        );
+
+        return;
+      }
+    }
+
+
+    const btn =
+      document.getElementById(
+        'salvar'
+      );
+
+
+    btn.disabled = true;
+
+    btn.textContent =
+      'Salvando...';
+
+
+    try {
+
+      let id =
+        modeloId;
+
+
+      const dados = {
+
+        nome:
+          nomeEl.value.trim(),
+
+        descricao:
+          descricaoEl.value.trim() ||
+          null,
+
+        categoria:
+          categoriaEl.value.trim() ||
+          null,
+
+        ativo:
+          true,
+
+        atualizado_em:
+          new Date().toISOString()
+
+      };
+
+
+      if (id) {
+
+        await api(
+          `checklist_modelos?id=eq.${id}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify(dados),
+            prefer: 'return=minimal'
+          }
+        );
+
+
+        await api(
+          `checklist_modelo_itens` +
+          `?modelo_id=eq.${id}`,
+          {
+            method: 'DELETE',
+            prefer: 'return=minimal'
+          }
+        );
+
+
+        await api(
+          `checklist_modelo_locais` +
+          `?modelo_id=eq.${id}`,
+          {
+            method: 'DELETE',
+            prefer: 'return=minimal'
+          }
+        );
+
+      } else {
+
+        const r =
+          await api(
+            'checklist_modelos',
+            {
+              method: 'POST',
+              body: JSON.stringify(dados),
+              prefer: 'return=representation'
+            }
+          );
+
+
+        id =
+          r?.[0]?.id;
+
+
+        if (!id) {
+
+          throw new Error(
+            'ID do modelo não retornado.'
+          );
+        }
+      }
+
+
+      for (
+        let li = 0;
+        li < locais.length;
+        li++
+      ) {
+
+        const l =
+          locais[li];
+
+
+        const lr =
+          await api(
+            'checklist_modelo_locais',
+            {
+              method: 'POST',
+
+              body: JSON.stringify({
+
+                modelo_id:
+                  id,
+
+                local_mestre_id:
+                  l.local_mestre_id ||
+                  null,
+
+                nome:
+                  l.nome,
+
+                ordem:
+                  li + 1,
+
+                ativo:
+                  true
+
+              }),
+
+              prefer:
+                'return=representation'
+            }
+          );
+
+
+        const lid =
+          lr?.[0]?.id;
+
+
+        if (!lid) {
+
+          throw new Error(
+            'ID do local do modelo não retornado.'
+          );
+        }
+
+
+        const itensPayload =
+          l.itens.map(
+            (it, ii) => ({
+
+              modelo_id:
+                id,
+
+              modelo_local_id:
+                lid,
+
+              local_id:
+                null,
+
+              item_mestre_id:
+                it.item_mestre_id ||
+                null,
+
+              item:
+                String(
+                  it.texto
+                ).trim(),
+
+              ordem:
+                ii + 1,
+
+              ativo:
+                true
+
+            })
+          );
+
+
+        await api(
+          'checklist_modelo_itens',
+          {
+            method: 'POST',
+            body: JSON.stringify(
+              itensPayload
+            ),
+            prefer: 'return=minimal'
+          }
+        );
+      }
+
+
+      aviso(
+        modeloId
+          ? 'Modelo atualizado.'
+          : 'Modelo criado.'
+      );
+
+
+      abrirLista();
+
+      await carregar();
+
+    } catch (e) {
+
+      console.error(e);
+
+      aviso(
+        'Erro ao salvar: ' +
+        e.message,
+        'erro'
+      );
+
+    } finally {
+
+      btn.disabled = false;
+
+      btn.textContent =
+        'Salvar modelo';
+    }
+  }
+
+
+  async function desativar(id) {
+
+    const m =
+      modelos.find(
+        x => x.id === id
+      );
+
+
+    if (!m) {
+      return;
+    }
+
+
+    if (
+      !confirm(
+        `Desativar "${m.nome}"?`
+      )
+    ) {
+      return;
+    }
+
+
+    try {
+
+      await api(
+        `checklist_modelos?id=eq.${id}`,
+        {
+          method: 'PATCH',
+
+          body: JSON.stringify({
+
+            ativo:
+              false,
+
+            atualizado_em:
+              new Date().toISOString()
+
+          }),
+
+          prefer:
+            'return=minimal'
+        }
+      );
+
+
+      await carregar();
+
+      aviso(
+        'Modelo desativado.'
+      );
+
+    } catch (e) {
+
+      aviso(
+        e.message,
+        'erro'
+      );
+    }
+  }
+
+
+  /* EVENTOS */
+
+
+  document
+    .getElementById(
+      'btn-voltar'
+    )
+    .onclick =
+      () => {
+
+        if (
+          editor.classList.contains(
+            'oculto'
+          )
+        ) {
+
+          location.href =
+            'index.html';
+
+        } else {
+
+          abrirLista();
+        }
+      };
+
+
+  document
+    .getElementById(
+      'btn-cadastro-locais'
+    )
+    .onclick =
+      () => {
+
+        location.href =
+          'cadastro-locais.html';
+      };
+
+
+  document
+    .getElementById(
+      'btn-cadastro-itens'
+    )
+    .onclick =
+      () => {
+
+        location.href =
+          'cadastro-itens.html';
+      };
+
+
+  document
+    .getElementById(
+      'novo'
+    )
+    .onclick =
+      novo;
+
+
+  document
+    .getElementById(
+      'add-local'
+    )
+    .onclick =
+      abrirModalLocais;
+
+
+  document
+    .getElementById(
+      'cancelar'
+    )
+    .onclick =
+      abrirLista;
+
+
+  document
+    .getElementById(
+      'salvar'
+    )
+    .onclick =
+      salvar;
+
+
+  buscaEl.oninput =
+    renderLista;
+
+
+  listaEl.addEventListener(
+    'click',
+    e => {
+
+      const b =
+        e.target.closest(
+          'button[data-acao]'
+        );
+
+
+      if (!b) {
+        return;
+      }
+
+
+      if (
+        b.dataset.acao ===
+        'editar'
+      ) {
+
+        editar(
+          b.dataset.id,
+          false
+        );
+      }
+
+
+      if (
+        b.dataset.acao ===
+        'duplicar'
+      ) {
+
+        editar(
+          b.dataset.id,
+          true
+        );
+      }
+
+
+      if (
+        b.dataset.acao ===
+        'desativar'
+      ) {
+
+        desativar(
+          b.dataset.id
+        );
+      }
+    }
+  );
+
+
+  locaisEl.addEventListener(
+    'click',
+    e => {
+
+      const b =
+        e.target.closest(
+          'button[data-acao]'
+        );
+
+
+      if (!b) {
+        return;
+      }
+
+
+      const a =
+        b.dataset.acao;
+
+
+      if (
+        a ===
+        'abrir-locais'
+      ) {
+
+        abrirModalLocais();
+
+        return;
+      }
+
+
+      const li =
+        Number(
+          b.dataset.local
+        );
+
+
+      const ii =
+        Number(
+          b.dataset.item
+        );
+
+
+      if (
+        a === 'lcima'
+      ) {
+
+        mover(
+          locais,
+          li,
+          li - 1
+        );
+      }
+
+
+      if (
+        a === 'lbaixo'
+      ) {
+
+        mover(
+          locais,
+          li,
+          li + 1
+        );
+      }
+
+
+      if (
+        a === 'lrem'
+      ) {
+
+        if (
+          confirm(
+            'Remover este local do modelo?'
+          )
+        ) {
+
+          locais.splice(
+            li,
+            1
+          );
+        }
+      }
+
+
+      if (
+        a ===
+        'selecionar-itens'
+      ) {
+
+        abrirModalItens(
+          li
+        );
+
+        return;
+      }
+
+
+      if (
+        a === 'icima'
+      ) {
+
+        mover(
+          locais[li].itens,
+          ii,
+          ii - 1
+        );
+      }
+
+
+      if (
+        a === 'ibaixo'
+      ) {
+
+        mover(
+          locais[li].itens,
+          ii,
+          ii + 1
+        );
+      }
+
+
+      if (
+        a === 'irem'
+      ) {
+
+        locais[li]
+          .itens
+          .splice(
+            ii,
+            1
+          );
+      }
+
+
+      renderLocais();
+    }
+  );
+
+
+  modalBusca.oninput =
+    renderModal;
+
+
+  document
+    .getElementById(
+      'modal-fechar'
+    )
+    .onclick =
+      fecharModal;
+
+
+  document
+    .getElementById(
+      'modal-cancelar'
+    )
+    .onclick =
+      fecharModal;
+
+
+  document
+    .getElementById(
+      'modal-aplicar'
+    )
+    .onclick =
+      aplicarModal;
+
+
+  modalFundo.addEventListener(
+    'click',
+    e => {
+
+      if (
+        e.target ===
+        modalFundo
+      ) {
+
+        fecharModal();
+      }
+    }
+  );
+
 
   carregar();
+
 })();
+
 </script>
+
 </body>
 </html>
