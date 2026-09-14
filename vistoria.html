@@ -178,7 +178,31 @@
     preencherMetadados(vistoria);
     return vistoria;
   }
+async function carregarSnapshotVistoria(vistoriaId) {
+  if (!vistoriaId) return [];
 
+  const itens = await buscarJson(
+    `${SUPABASE_URL}/rest/v1/checklist_vistoria_itens` +
+    `?vistoria_id=eq.${encodeURIComponent(vistoriaId)}` +
+    `&select=id,local_nome_snapshot,item_descricao_snapshot,status,observacao,responsavel_nc,data_nc,ordem,foto_path,arquivar_foto` +
+    `&order=ordem.asc`
+  );
+
+  return itens.map(item => ({
+    snapshot_id: item.id,
+    local_id: '',
+    item_id: '',
+    setor: item.local_nome_snapshot,
+    item: item.item_descricao_snapshot,
+    ordem: item.ordem || 0,
+    status: item.status || 'C',
+    observacao: item.observacao || '',
+    responsavel_nc: item.responsavel_nc || '',
+    data_nc: item.data_nc || '',
+    foto_path: item.foto_path || null,
+    arquivar_foto: item.arquivar_foto === true
+  }));
+}
   async function carregarModeloPersonalizado(modeloId) {
     const [locais, itens] = await Promise.all([
       buscarJson(`${SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem&order=ordem.asc`),
@@ -239,9 +263,20 @@
     selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
 
     const vistoria = await carregarVistoriaAtual();
-    initialData = vistoria?.modelo_id
-      ? await carregarModeloPersonalizado(vistoria.modelo_id)
-      : await carregarModeloLegado();
+    
+    const vistoriaId = getVistoriaId();
+    
+    const snapshot = vistoriaId
+      ? await carregarSnapshotVistoria(vistoriaId)
+      : [];
+    
+    if (snapshot.length) {
+      initialData = snapshot;
+    } else {
+      initialData = vistoria?.modelo_id
+        ? await carregarModeloPersonalizado(vistoria.modelo_id)
+        : await carregarModeloLegado();
+    }
 
     if (!initialData.length) {
       throw new Error(vistoria?.modelo_id
