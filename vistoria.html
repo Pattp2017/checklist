@@ -54,11 +54,66 @@
     return texto ? JSON.parse(texto) : [];
   }
 
-  async function carregarModeloChecklist() {
-    checklistEl.innerHTML = '<div style="padding:16px;text-align:center;">Carregando checklist...</div>';
-    selectLocal.disabled = true;
-    selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
+  function getVistoriaId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('vistoria_id') || localStorage.getItem('checklist_vistoria_id') || null;
+  }
 
+  function preencherMetadados(vistoria) {
+    if (!vistoria) return;
+    const campos = {
+      'meta-empresa-id': vistoria.empresa_id || '',
+      'meta-empresa-nome': vistoria.empresa_nome || '',
+      'meta-responsavel-tecnico': vistoria.responsavel_tecnico || '',
+      'meta-responsavel-auditoria': vistoria.responsavel_auditoria || '',
+      'meta-data-auditoria': vistoria.data_auditoria || '',
+      'meta-horario': vistoria.horario || ''
+    };
+    Object.entries(campos).forEach(([id, valor]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = valor;
+    });
+  }
+
+  async function carregarVistoriaAtual() {
+    const vistoriaId = getVistoriaId();
+    if (!vistoriaId) return null;
+    const dados = await buscarJson(`${SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=*`);
+    const vistoria = dados?.[0] || null;
+    preencherMetadados(vistoria);
+    return vistoria;
+  }
+
+  async function carregarModeloPersonalizado(modeloId) {
+    const [locais, itens] = await Promise.all([
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem&order=ordem.asc`),
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_modelo_itens?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,modelo_local_id,item,ordem&order=ordem.asc`)
+    ]);
+
+    const itensPorLocal = new Map();
+    itens.forEach(item => {
+      const chave = String(item.modelo_local_id || '');
+      if (!itensPorLocal.has(chave)) itensPorLocal.set(chave, []);
+      itensPorLocal.get(chave).push(item);
+    });
+
+    const dados = [];
+    locais.forEach(local => {
+      const lista = itensPorLocal.get(String(local.id)) || [];
+      lista.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+      lista.forEach(item => dados.push({
+        local_id: local.id,
+        item_id: item.id,
+        setor: local.nome,
+        item: item.item,
+        ordem: item.ordem || 0,
+        status: 'C'
+      }));
+    });
+    return dados;
+  }
+
+  async function carregarModeloLegado() {
     const [locais, itensMestre, vinculos] = await Promise.all([
       buscarJson(`${SUPABASE_URL}/rest/v1/checklist_locais?select=id,nome,ordem,ativo&ativo=eq.true`),
       buscarJson(`${SUPABASE_URL}/rest/v1/checklist_itens_mestre?select=id,descricao,ativo&ativo=eq.true`),
@@ -68,20 +123,37 @@
     const locaisPorId = new Map(locais.map(local => [String(local.id), local]));
     const itensPorId = new Map(itensMestre.map(item => [String(item.id), item]));
 
-    initialData = vinculos.map(vinculo => {
+    const dados = vinculos.map(vinculo => {
       const local = locaisPorId.get(String(vinculo.local_id));
       const item = itensPorId.get(String(vinculo.item_id));
       if (!local || !item) return null;
       return { local_id: local.id, item_id: item.id, setor: local.nome, item: item.descricao, ordem: vinculo.ordem || 0, status: 'C' };
     }).filter(Boolean);
 
-    initialData.sort((a, b) => {
+    dados.sort((a, b) => {
       const porLocal = a.setor.localeCompare(b.setor, 'pt-BR', { sensitivity: 'base' });
       if (porLocal !== 0) return porLocal;
       return (a.ordem || 0) - (b.ordem || 0);
     });
+    return dados;
+  }
 
-    if (!initialData.length) throw new Error('Nenhum item ativo foi encontrado na matriz do checklist.');
+  async function carregarModeloChecklist() {
+    checklistEl.innerHTML = '<div style="padding:16px;text-align:center;">Carregando checklist...</div>';
+    selectLocal.disabled = true;
+    selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
+
+    const vistoria = await carregarVistoriaAtual();
+    initialData = vistoria?.modelo_id
+      ? await carregarModeloPersonalizado(vistoria.modelo_id)
+      : await carregarModeloLegado();
+
+    if (!initialData.length) {
+      throw new Error(vistoria?.modelo_id
+        ? 'O modelo selecionado não possui locais e itens ativos.'
+        : 'Nenhum item ativo foi encontrado na matriz do checklist.');
+    }
+
     populateLocalMenu();
     renderAllSections(initialData);
     selectLocal.disabled = false;
@@ -92,7 +164,7 @@
   function getUniqueSetores(data) { return [...new Set(data.map(item => item.setor))]; }
 
   function populateLocalMenu() {
-    const setores = getUniqueSetores(initialData).sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+    const setores = getUniqueSetores(initialData);
     selectLocal.innerHTML = '<option value="ALL">Todos os locais</option>';
     setores.forEach(setor => {
       const option = document.createElement('option');
