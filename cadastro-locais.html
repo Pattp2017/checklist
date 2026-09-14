@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Locais</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937}.topo{background:#fff;border-bottom:1px solid #d9dee5;padding:16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}.voltar{border:0;background:transparent;font-size:28px;color:#163a5f;cursor:pointer}.topo h1{margin:0;color:#163a5f;font-size:22px}.container{max-width:900px;margin:0 auto;padding:20px 14px 50px}.barra{display:flex;gap:8px;margin-bottom:14px}.barra input{flex:1}.card{background:#fff;border:1px solid #d9dee5;border-radius:12px;padding:16px;margin-bottom:14px}.lista{display:grid;gap:8px}.linha{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #d9dee5;border-radius:9px;padding:11px}.linha.inativo{opacity:.58}.nome{font-weight:700;color:#163a5f}.meta{font-size:12px;color:#6b7280;margin-top:3px}.acoes{display:flex;gap:6px;flex-wrap:wrap}.btn,.mini{border:0;border-radius:8px;padding:10px 14px;background:#163a5f;color:#fff;font-weight:700;cursor:pointer}.mini{padding:7px 10px;border:1px solid #d9dee5;background:#fff;color:#163a5f}.mini.perigo{color:#a12622}.msg{display:none;margin-bottom:12px;padding:10px;border-radius:8px}.msg.ok{display:block;background:#ecfdf3;color:#166534}.msg.erro{display:block;background:#fff1f1;color:#b42318}.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modal.aberto{display:flex}.modal-card{width:min(520px,100%);background:#fff;border-radius:14px;padding:18px}.modal-card h2{margin:0 0 14px;color:#163a5f}.campo label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}input{width:100%;border:1px solid #cbd2d9;border-radius:8px;padding:10px;font:inherit}.modal-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.sec{background:#e8eef5;color:#163a5f}@media(max-width:650px){.barra{flex-direction:column}.linha{grid-template-columns:1fr}.acoes{justify-content:flex-start}}
+  </style>
+</head>
+<body>
+<header class="topo"><button class="voltar" id="voltar" type="button">‹</button><h1>Cadastro de Locais</h1></header>
+<main class="container">
+  <div id="msg" class="msg"></div>
+  <div class="barra"><input id="busca" type="search" placeholder="Buscar local..."><button class="btn" id="novo" type="button">+ Novo local</button></div>
+  <div class="card"><div id="lista" class="lista">Carregando...</div></div>
+</main>
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h2 id="titulo-modal">Novo local</h2>
+    <div class="campo"><label for="nome">Nome *</label><input id="nome" type="text" maxlength="160" placeholder="Ex.: PORTARIA / ENTRADA"></div>
+    <div class="modal-acoes"><button class="btn sec" id="cancelar" type="button">Cancelar</button><button class="btn" id="salvar" type="button">Salvar</button></div>
+  </div>
+</div>
+<script>
+(() => {
+  const SUPABASE_URL='https://dbleblnwolbbxtscjxif.supabase.co';
+  const SUPABASE_KEY='sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+  const listaEl=document.getElementById('lista'),buscaEl=document.getElementById('busca'),msgEl=document.getElementById('msg'),modal=document.getElementById('modal'),nomeEl=document.getElementById('nome');
+  let registros=[],editandoId=null;
+  function headers(prefer){const h={apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',Accept:'application/json'};if(prefer)h.Prefer=prefer;return h}
+  async function api(path,options={}){const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{...options,headers:{...headers(options.prefer),...(options.headers||{})}});const t=await r.text();if(!r.ok)throw new Error(t||('Erro '+r.status));if(!t)return null;try{return JSON.parse(t)}catch{return t}}
+  function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+  function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;')}
+  function aviso(txt,tipo='ok'){msgEl.className='msg '+tipo;msgEl.textContent=txt;clearTimeout(aviso.t);aviso.t=setTimeout(()=>{msgEl.className='msg';msgEl.textContent=''},3000)}
+  async function carregar(){try{registros=await api('checklist_locais?select=*&order=ativo.desc,ordem.asc.nullslast,nome.asc')||[];render()}catch(e){listaEl.textContent='Erro ao carregar locais.';aviso(e.message,'erro')}}
+  function render(){const q=norm(buscaEl.value);const arr=registros.filter(x=>!q||norm(x.nome).includes(q));if(!arr.length){listaEl.innerHTML='<div>Nenhum local encontrado.</div>';return}listaEl.innerHTML=arr.map(x=>`<div class="linha ${x.ativo?'':'inativo'}"><div><div class="nome">${esc(x.nome)}</div><div class="meta">${x.ativo?'Ativo':'Inativo'}</div></div><div class="acoes"><button class="mini" data-acao="editar" data-id="${x.id}">Editar</button><button class="mini ${x.ativo?'perigo':''}" data-acao="status" data-id="${x.id}">${x.ativo?'Desativar':'Reativar'}</button></div></div>`).join('')}
+  function abrirNovo(){editandoId=null;nomeEl.value='';document.getElementById('titulo-modal').textContent='Novo local';modal.classList.add('aberto');setTimeout(()=>nomeEl.focus(),50)}
+  function abrirEdicao(id){const x=registros.find(r=>r.id===id);if(!x)return;editandoId=id;nomeEl.value=x.nome;document.getElementById('titulo-modal').textContent='Editar local';modal.classList.add('aberto');setTimeout(()=>nomeEl.focus(),50)}
+  function fechar(){modal.classList.remove('aberto')}
+  async function salvar(){const nome=nomeEl.value.trim();if(!nome){aviso('Informe o nome do local.','erro');return}const duplicado=registros.some(x=>x.id!==editandoId&&norm(x.nome)===norm(nome));if(duplicado){aviso('Já existe um local com esse nome.','erro');return}const b=document.getElementById('salvar');b.disabled=true;b.textContent='Salvando...';try{if(editandoId){await api(`checklist_locais?id=eq.${editandoId}`,{method:'PATCH',body:JSON.stringify({nome}),prefer:'return=minimal'})}else{const prox=Math.max(0,...registros.map(x=>Number(x.ordem)||0))+1;await api('checklist_locais',{method:'POST',body:JSON.stringify({nome,ativo:true,ordem:prox}),prefer:'return=minimal'})}fechar();await carregar();aviso(editandoId?'Local atualizado.':'Local criado.')}catch(e){aviso('Erro ao salvar: '+e.message,'erro')}finally{b.disabled=false;b.textContent='Salvar'}}
+  async function alterarStatus(id){const x=registros.find(r=>r.id===id);if(!x)return;const novo=!x.ativo;if(!novo&&!confirm(`Desativar "${x.nome}"?`))return;try{await api(`checklist_locais?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({ativo:novo}),prefer:'return=minimal'});await carregar();aviso(novo?'Local reativado.':'Local desativado.')}catch(e){aviso(e.message,'erro')}}
+  document.getElementById('voltar').onclick=()=>location.href='modelos-inspecao.html';document.getElementById('novo').onclick=abrirNovo;document.getElementById('cancelar').onclick=fechar;document.getElementById('salvar').onclick=salvar;buscaEl.oninput=render;nomeEl.addEventListener('keydown',e=>{if(e.key==='Enter')salvar()});modal.addEventListener('click',e=>{if(e.target===modal)fechar()});listaEl.addEventListener('click',e=>{const b=e.target.closest('button[data-acao]');if(!b)return;if(b.dataset.acao==='editar')abrirEdicao(b.dataset.id);if(b.dataset.acao==='status')alterarStatus(b.dataset.id)});carregar();
+})();
+</script>
+</body>
+</html>
