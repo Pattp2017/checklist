@@ -34,7 +34,7 @@
   async function carregarDadosVistoria() {
     const vistoriaId = getVistoriaId(); if (!vistoriaId) return null;
     const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+    const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjZc7CswobVg_0BlBfRSd';
     try {
       const resposta = await fetch(`${SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=*`, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
       const texto = await resposta.text(); if (!resposta.ok) throw new Error(texto || 'Erro ao carregar vistoria.');
@@ -50,6 +50,7 @@
       const textarea = row.querySelector('textarea.obs');
       const responsavel = row.querySelector('.responsavel-nc');
       const dataNC = row.querySelector('.data-nc');
+      const medida = row.querySelector('.medida-corretiva-nc');
       const status = marcado ? marcado.value : 'C';
       return {
         setor: row.dataset.setor || '', item: row.dataset.item || '', local_id: row.dataset.localId || '', item_id: row.dataset.itemId || '',
@@ -57,6 +58,7 @@
         obs: status === 'NC' && textarea ? textarea.value.trim() : '',
         responsavel_nc: status === 'NC' && responsavel ? responsavel.value.trim() : '',
         data_nc: status === 'NC' && dataNC ? dataNC.value : '',
+        medida_corretiva: status === 'NC' && medida ? medida.value.trim() : '',
         photo: row.dataset.temFoto === 'true'
       };
     });
@@ -67,6 +69,7 @@
     const textarea = row.querySelector('textarea.obs'); if (textarea) textarea.value = it.obs || '';
     const responsavel = row.querySelector('.responsavel-nc'); if (responsavel) responsavel.value = it.responsavel_nc || '';
     const dataNC = row.querySelector('.data-nc'); if (dataNC) dataNC.value = it.data_nc || '';
+    const medida = row.querySelector('.medida-corretiva-nc'); if (medida) medida.value = it.medida_corretiva || '';
     if (it.photo) row.dataset.temFoto = 'true'; else delete row.dataset.temFoto;
     const marcado = row.querySelector('input[type="radio"]:checked');
     if (marcado) marcado.dispatchEvent(new Event('change', { bubbles: true }));
@@ -75,6 +78,7 @@
       if (textarea) textarea.value = it.obs || '';
       if (responsavel) responsavel.value = it.responsavel_nc || '';
       if (dataNC) dataNC.value = it.data_nc || document.getElementById('meta-data-auditoria')?.value || '';
+      if (medida) medida.value = it.medida_corretiva || medida.value || '';
     }
   }
 
