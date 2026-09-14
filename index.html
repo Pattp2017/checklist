@@ -8,10 +8,11 @@
     *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937}
     .topo{background:#fff;border-bottom:1px solid #d9dee5;padding:18px 20px;text-align:center}.topo h1{margin:0;font-size:22px;color:#163a5f}
     .container{width:100%;max-width:760px;margin:0 auto;padding:35px 18px}.menu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-    .menu-card{min-height:150px;border:1px solid #d9dee5;border-radius:12px;background:#fff;padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-decoration:none;color:#1f2937;transition:transform .15s ease,box-shadow .15s ease}
+    .menu-card{min-height:150px;border:1px solid #d9dee5;border-radius:12px;background:#fff;padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-decoration:none;color:#1f2937;transition:transform .15s ease,box-shadow .15s ease;cursor:pointer}
     .menu-card:hover{box-shadow:0 5px 16px rgba(0,0,0,.08)}.menu-card:active{transform:scale(.98)}.menu-icon{font-size:38px;margin-bottom:12px}
     .menu-card strong{display:block;font-size:17px;color:#163a5f;margin-bottom:6px}.menu-card span{font-size:13px;color:#6b7280;line-height:1.4}
-    @media(max-width:720px){.menu{grid-template-columns:1fr}.menu-card{min-height:120px}.container{padding:28px 16px}}
+    .cadastros{grid-column:1/-1;display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:#fff;border:1px solid #d9dee5;border-radius:12px;padding:12px}.cadastros.aberto{display:grid}.cadastro-link{display:block;text-decoration:none;color:#163a5f;font-weight:700;text-align:center;border:1px solid #d9dee5;border-radius:9px;padding:13px 10px;background:#f8fafc}.cadastro-link:hover{background:#eef4f8}
+    @media(max-width:720px){.menu{grid-template-columns:1fr}.menu-card{min-height:120px}.container{padding:28px 16px}.cadastros{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -20,8 +21,18 @@
     <section class="menu">
       <a href="novo-checklist.html" class="menu-card"><div class="menu-icon">➕</div><strong>Novo Checklist</strong><span>Iniciar uma nova vistoria</span></a>
       <a href="checklists.html" class="menu-card"><div class="menu-icon">📋</div><strong>Checklists</strong><span>Consultar e continuar vistorias</span></a>
-      <a href="modelos-inspecao.html" class="menu-card"><div class="menu-icon">🧩</div><strong>Modelos de Inspeção</strong><span>Criar, editar e duplicar modelos</span></a>
+      <button type="button" class="menu-card" id="btnCadastros"><div class="menu-icon">⚙️</div><strong>Cadastros</strong><span>Locais, itens e modelos de inspeção</span></button>
+      <div class="cadastros" id="menuCadastros">
+        <a href="cadastro-locais.html" class="cadastro-link">📍 Locais</a>
+        <a href="cadastro-itens.html" class="cadastro-link">☑️ Itens do Checklist</a>
+        <a href="modelos-inspecao.html" class="cadastro-link">🧩 Modelos de Inspeção</a>
+      </div>
     </section>
   </main>
+  <script>
+    const btnCadastros=document.getElementById('btnCadastros');
+    const menuCadastros=document.getElementById('menuCadastros');
+    btnCadastros.addEventListener('click',()=>menuCadastros.classList.toggle('aberto'));
+  </script>
 </body>
 </html>
