@@ -20,6 +20,7 @@
     .local-head input{font-weight:700}.local-head .grupo{display:flex;gap:5px}.icon{width:36px;height:36px;border:1px solid #d9dee5;border-radius:7px;background:#fff;cursor:pointer}
     .itens{padding:10px}.item{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px}.item .grupo{display:flex;gap:5px}
     .add{width:100%;border:1px dashed #9ca3af;border-radius:8px;background:#fff;color:#163a5f;padding:10px;font-weight:700;cursor:pointer}
+    .add-duplo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.add-duplo .add{width:100%}
     .msg{display:none;margin-bottom:12px;padding:10px;border-radius:8px}.msg.ok{display:block;background:#ecfdf3;color:#166534}.msg.erro{display:block;background:#fff1f1;color:#b42318}
     .oculto{display:none!important}.barra{display:flex;gap:8px;margin-bottom:14px}.barra input{flex:1}
     @media(max-width:650px){.grid{grid-template-columns:1fr}.modelo{grid-template-columns:1fr}.item{grid-template-columns:1fr}.barra{flex-direction:column}.local-head{flex-direction:column}}
@@ -156,6 +157,20 @@
 
   function adicionarLocal(){locais.push({nome:'',itens:[]}); renderLocais()}
 
+  function focarLocal(indice){
+    requestAnimationFrame(()=>{
+      const el=locaisEl.querySelector(`.local-nome[data-local="${indice}"]`);
+      if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}
+    });
+  }
+
+  function focarItem(localIndex,itemIndex){
+    requestAnimationFrame(()=>{
+      const el=locaisEl.querySelector(`.item-texto[data-local="${localIndex}"][data-item="${itemIndex}"]`);
+      if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.focus()}
+    });
+  }
+
   function renderLocais(){
     if(!locais.length){locaisEl.innerHTML='<div class="card">Nenhum local adicionado.</div>';return}
     locaisEl.innerHTML=locais.map((l,li)=>`
@@ -178,7 +193,10 @@
                 <button class="icon" data-acao="irem" data-local="${li}" data-item="${ii}">×</button>
               </div>
             </div>`).join('')}
-          <button class="add" data-acao="iadd" data-local="${li}">+ Adicionar item</button>
+          <div class="add-duplo">
+            <button class="add" data-acao="ladd" data-local="${li}">+ Adicionar local</button>
+            <button class="add" data-acao="iadd" data-local="${li}">+ Adicionar item</button>
+          </div>
         </div>
       </div>`).join('');
   }
@@ -263,7 +281,13 @@
 
   document.getElementById('btn-voltar').onclick=()=>editor.classList.contains('oculto')?location.href='index.html':abrirLista();
   document.getElementById('novo').onclick=novo;
-  document.getElementById('add-local').onclick=()=>{capturar();adicionarLocal()};
+  document.getElementById('add-local').onclick=()=>{
+    capturar();
+    const novoIndex=locais.length;
+    locais.push({nome:'',itens:[]});
+    renderLocais();
+    focarLocal(novoIndex);
+  };
   document.getElementById('cancelar').onclick=abrirLista;
   document.getElementById('salvar').onclick=salvar;
   buscaEl.oninput=renderLista;
@@ -279,14 +303,26 @@
     const b=e.target.closest('button[data-acao]');if(!b)return;
     capturar();
     const li=+b.dataset.local, ii=+b.dataset.item, a=b.dataset.acao;
+    let foco=null;
+
     if(a==='lcima')mover(locais,li,li-1);
     if(a==='lbaixo')mover(locais,li,li+1);
     if(a==='lrem'&&confirm('Remover este local e seus itens?'))locais.splice(li,1);
-    if(a==='iadd')locais[li].itens.push('');
+    if(a==='ladd'){
+      const novoIndex=li+1;
+      locais.splice(novoIndex,0,{nome:'',itens:[]});
+      foco=()=>focarLocal(novoIndex);
+    }
+    if(a==='iadd'){
+      locais[li].itens.push('');
+      const novoItem=locais[li].itens.length-1;
+      foco=()=>focarItem(li,novoItem);
+    }
     if(a==='icima')mover(locais[li].itens,ii,ii-1);
     if(a==='ibaixo')mover(locais[li].itens,ii,ii+1);
     if(a==='irem')locais[li].itens.splice(ii,1);
     renderLocais();
+    if(foco)foco();
   });
 
   carregar();
