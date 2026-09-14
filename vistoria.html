@@ -20,6 +20,7 @@
     <div class="meta-actions">
       <button class="btn-save" id="btn-salvar-meta" type="button">Salvar</button>
       <button class="btn" id="btn-concluir-checklist" type="button">Concluir Checklist</button>
+      <button class="btn" id="btn-cancelar-checklist" type="button" style="background:#c53030;">Cancelar checklist</button>
     </div>
   </div>
 
@@ -40,6 +41,7 @@
   const checklistEl = document.getElementById('checklist');
   const btnSalvarMeta = document.getElementById('btn-salvar-meta');
   const btnConcluirChecklist = document.getElementById('btn-concluir-checklist');
+  const btnCancelarChecklist = document.getElementById('btn-cancelar-checklist');
   const campoDataAuditoria = document.getElementById('meta-data-auditoria');
   let initialData = [];
 
@@ -277,7 +279,7 @@
       await carregarModeloChecklist();
       await carregarScript('persist.js?v=14');
       await carregarScript('speech.js?v=13');
-      await carregarScript('db-v8.js?v=14');
+      await carregarScript('db-v8.js?v=15');
       await carregarScript('photo.js?v=13');
 
       btnSalvarMeta.addEventListener('click', async () => {
@@ -290,6 +292,11 @@
         const confirmar = confirm('Deseja concluir este checklist?\n\nApós a conclusão, a vistoria será marcada como finalizada.');
         if (!confirmar) return;
         await window.VistoriaDB.concluirVistoria();
+      });
+
+      btnCancelarChecklist.addEventListener('click', async () => {
+        if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+        await window.VistoriaDB.cancelarVistoria();
       });
     } catch (erro) {
       console.error('Erro ao iniciar checklist:', erro);
