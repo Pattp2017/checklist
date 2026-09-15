@@ -154,6 +154,13 @@
     return params.get('vistoria_id') || localStorage.getItem('checklist_vistoria_id') || null;
   }
 
+  // Configuração compartilhada exclusivamente com o módulo gps.js.
+  window.ChecklistGPSConfig = {
+    supabaseUrl: SUPABASE_URL,
+    supabaseKey: SUPABASE_KEY,
+    getVistoriaId
+  };
+
   function preencherMetadados(vistoria) {
     if (!vistoria) return;
     const campos = {
@@ -464,6 +471,7 @@
       await carregarScript('speech.js?v=13');
       await carregarScript('db-v8.js?v=17');
       await carregarScript('photo.js?v=13');
+      await carregarScript('gps.js?v=1');
 
       requestAnimationFrame(() => requestAnimationFrame(() => {
         alteracoesNaoSalvas = false;
