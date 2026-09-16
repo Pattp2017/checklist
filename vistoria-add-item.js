@@ -4,8 +4,8 @@
 // Suporta pesquisa e inclusão offline com sincronização posterior
 // =========================================================
 (function () {
-  const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+  const SUPABASE_URL = 'https://uofnninqxnsvaemxpwhh.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8';
   const CACHE_ITENS = 'checklist_itens_mestre_offline_v1';
   const FILA = 'checklist_add_item_fila_v1';
   let itensMestre = [];
