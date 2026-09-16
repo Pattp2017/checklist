@@ -45,15 +45,47 @@
     el.style.background = tipo === 'offline' ? '#fff7d6' : '#e9f8ef';
     el.style.color = tipo === 'offline' ? '#725600' : '#176b39';
   }
+
+  function setNetworkBorder(online) {
+    let style = document.getElementById('checklist-network-border-style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'checklist-network-border-style';
+      style.textContent = `
+        html::after {
+          content: '';
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 2147483647;
+          border: 2px solid var(--checklist-network-color, #22c55e);
+          box-sizing: border-box;
+          transition: border-color .25s ease;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    document.documentElement.style.setProperty(
+      '--checklist-network-color',
+      online ? '#22c55e' : '#f59e0b'
+    );
+  }
+
   function updateNetworkStatus() {
-    if (!navigator.onLine) setBanner('📴 Modo offline • dados permanecem neste aparelho', 'offline');
+    const online = navigator.onLine;
+    setNetworkBorder(online);
+
+    if (!online) setBanner('📴 Modo offline • dados permanecem neste aparelho', 'offline');
     else {
       const el = document.getElementById('offline-status');
       if (el) el.style.display = 'none';
     }
   }
+
   window.addEventListener('online', updateNetworkStatus);
   window.addEventListener('offline', updateNetworkStatus);
   document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+  updateNetworkStatus();
+
   window.ChecklistOffline = { saveModel, loadModel, read, write, updateNetworkStatus };
 })();
