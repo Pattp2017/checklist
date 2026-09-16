@@ -1,1 +1,552 @@
-PLACEHOLDER
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Checklist de Vistoria</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .vistoria-nav {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+    }
+    .btn-voltar {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      padding: 4px 10px;
+      font-size: 36px;
+      line-height: 1;
+      font-weight: 300;
+      color: #1f2937;
+      cursor: pointer;
+    }
+    .local-progresso {
+      flex: 1;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .saida-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .55);
+    }
+    .saida-overlay.aberto { display: flex; }
+    .saida-dialog {
+      width: min(440px, 100%);
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+    }
+    .saida-dialog h3 { margin: 0 0 8px; color: #0f172a; }
+    .saida-dialog p { margin: 0 0 18px; color: #475569; line-height: 1.4; }
+    .saida-acoes { display: grid; gap: 8px; }
+    .saida-acoes button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .saida-salvar { background: #0b6aa6; color: #fff; }
+    .saida-sem-salvar { background: #fff1f1; color: #a11; border: 1px solid #e3a6a6 !important; }
+    .saida-cancelar { background: #eef2f7; color: #334155; }
+    @media (max-width: 600px) {
+      .vistoria-nav { gap: 6px; padding: 9px 8px; }
+      .local-progresso { font-size: 13px; text-align: left; }
+      .btn-voltar { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <center><h1>Checklist de Vistoria</h1></center>
+
+  <div class="vistoria-nav">
+    <button id="btn-voltar-vistoria" class="btn-voltar" type="button" aria-label="Voltar">‹</button>
+    <div id="local-progresso" class="local-progresso">Carregando locais...</div>
+  </div>
+
+  <div class="meta" aria-label="Dados da auditoria">
+    <label>Empresa:<input id="meta-empresa-nome" type="text" placeholder="Nome da empresa" /></label>
+    <input id="meta-empresa-id" type="hidden" />
+    <label>Responsável técnico:<input id="meta-responsavel-tecnico" type="text" placeholder="Responsável técnico" /></label>
+    <label>Responsável pela auditoria:<input id="meta-responsavel-auditoria" type="text" placeholder="Responsável pela auditoria" /></label>
+    <label>Data da auditoria:<input id="meta-data-auditoria" type="date" /></label>
+    <label>Horário:<input id="meta-horario" type="text" readonly /></label>
+    <div class="meta-actions">
+      <button class="btn-save" id="btn-salvar-meta" type="button">Salvar</button>
+      <button class="btn" id="btn-concluir-checklist" type="button">Concluir Checklist</button>
+      <button class="btn" id="btn-cancelar-checklist" type="button" style="background:#c53030;">Cancelar checklist</button>
+    </div>
+  </div>
+
+  <div class="controls-top">
+    <label class="small" for="select-local">Escolha o local:</label>
+    <select id="select-local" class="select-local" aria-label="Selecionar local" disabled>
+      <option value="ALL">Carregando locais...</option>
+    </select>
+  </div>
+
+  <div id="checklist"><div style="padding:16px;text-align:center;">Carregando checklist...</div></div>
+
+  <div id="saida-overlay" class="saida-overlay" role="dialog" aria-modal="true" aria-labelledby="saida-titulo">
+    <div class="saida-dialog">
+      <h3 id="saida-titulo">Alterações não salvas</h3>
+      <p>Existem alterações não salvas. Deseja salvar antes de sair?</p>
+      <div class="saida-acoes">
+        <button id="btn-salvar-voltar" class="saida-salvar" type="button">Salvar e voltar</button>
+        <button id="btn-sair-sem-salvar" class="saida-sem-salvar" type="button">Sair sem salvar</button>
+        <button id="btn-fechar-saida" class="saida-cancelar" type="button">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+<script src="offline-cache.js?v=1"></script>
+<script>
+(function () {
+  const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+  const selectLocal = document.getElementById('select-local');
+  const checklistEl = document.getElementById('checklist');
+  const btnSalvarMeta = document.getElementById('btn-salvar-meta');
+  const btnConcluirChecklist = document.getElementById('btn-concluir-checklist');
+  const btnCancelarChecklist = document.getElementById('btn-cancelar-checklist');
+  const btnVoltarVistoria = document.getElementById('btn-voltar-vistoria');
+  const localProgresso = document.getElementById('local-progresso');
+  const saidaOverlay = document.getElementById('saida-overlay');
+  const btnSalvarVoltar = document.getElementById('btn-salvar-voltar');
+  const btnSairSemSalvar = document.getElementById('btn-sair-sem-salvar');
+  const btnFecharSaida = document.getElementById('btn-fechar-saida');
+  const campoDataAuditoria = document.getElementById('meta-data-auditoria');
+  let initialData = [];
+  let alteracoesNaoSalvas = false;
+  let monitorarAlteracoes = false;
+
+  function getSupabaseHeaders() {
+    return { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, Accept: 'application/json' };
+  }
+
+  async function buscarJson(url) {
+    const resposta = await fetch(url, { method: 'GET', headers: getSupabaseHeaders() });
+    const texto = await resposta.text();
+    if (!resposta.ok) throw new Error(texto || 'Erro ao consultar Supabase.');
+    return texto ? JSON.parse(texto) : [];
+  }
+
+  function getVistoriaId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('vistoria_id') || localStorage.getItem('checklist_vistoria_id') || null;
+  }
+
+  // Configuração compartilhada exclusivamente com o módulo gps.js.
+  window.ChecklistGPSConfig = {
+    supabaseUrl: SUPABASE_URL,
+    supabaseKey: SUPABASE_KEY,
+    getVistoriaId
+  };
+
+  function preencherMetadados(vistoria) {
+    if (!vistoria) return;
+    const campos = {
+      'meta-empresa-id': vistoria.empresa_id || '',
+      'meta-empresa-nome': vistoria.empresa_nome || '',
+      'meta-responsavel-tecnico': vistoria.responsavel_tecnico || '',
+      'meta-responsavel-auditoria': vistoria.responsavel_auditoria || '',
+      'meta-data-auditoria': vistoria.data_auditoria || '',
+      'meta-horario': vistoria.horario || ''
+    };
+    Object.entries(campos).forEach(([id, valor]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = valor;
+    });
+  }
+
+  async function carregarVistoriaAtual() {
+    const vistoriaId = getVistoriaId();
+    if (!vistoriaId) return null;
+    const dados = await buscarJson(`${SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=*`);
+    const vistoria = dados?.[0] || null;
+    preencherMetadados(vistoria);
+    return vistoria;
+  }
+
+  async function carregarSnapshotVistoria(vistoriaId) {
+    if (!vistoriaId) return [];
+
+    const itens = await buscarJson(
+      `${SUPABASE_URL}/rest/v1/checklist_vistoria_itens` +
+      `?vistoria_id=eq.${encodeURIComponent(vistoriaId)}` +
+      `&select=id,local_nome_snapshot,item_descricao_snapshot,status,observacao,responsavel_nc,data_nc,ordem,foto_path,arquivar_foto` +
+      `&order=ordem.asc`
+    );
+
+    return itens.map(item => ({
+      snapshot_id: item.id,
+      local_id: '',
+      item_id: '',
+      setor: item.local_nome_snapshot,
+      item: item.item_descricao_snapshot,
+      ordem: item.ordem || 0,
+      status: item.status || 'C',
+      observacao: item.observacao || '',
+      responsavel_nc: item.responsavel_nc || '',
+      data_nc: item.data_nc || '',
+      foto_path: item.foto_path || null,
+      arquivar_foto: item.arquivar_foto === true
+    }));
+  }
+
+  async function carregarModeloPersonalizado(modeloId) {
+    const [locais, itens] = await Promise.all([
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_modelo_locais?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,nome,ordem&order=ordem.asc`),
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_modelo_itens?modelo_id=eq.${encodeURIComponent(modeloId)}&ativo=eq.true&select=id,modelo_local_id,item,ordem&order=ordem.asc`)
+    ]);
+
+    const itensPorLocal = new Map();
+    itens.forEach(item => {
+      const chave = String(item.modelo_local_id || '');
+      if (!itensPorLocal.has(chave)) itensPorLocal.set(chave, []);
+      itensPorLocal.get(chave).push(item);
+    });
+
+    const dados = [];
+    locais.forEach(local => {
+      const lista = itensPorLocal.get(String(local.id)) || [];
+      lista.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+      lista.forEach(item => dados.push({
+        local_id: local.id,
+        item_id: item.id,
+        setor: local.nome,
+        item: item.item,
+        ordem: item.ordem || 0,
+        status: 'C'
+      }));
+    });
+    return dados;
+  }
+
+  async function carregarModeloLegado() {
+    const [locais, itensMestre, vinculos] = await Promise.all([
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_locais?select=id,nome,ordem,ativo&ativo=eq.true`),
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_itens_mestre?select=id,descricao,ativo&ativo=eq.true`),
+      buscarJson(`${SUPABASE_URL}/rest/v1/checklist_local_itens?select=id,local_id,item_id,ordem,ativo&ativo=eq.true`)
+    ]);
+
+    const locaisPorId = new Map(locais.map(local => [String(local.id), local]));
+    const itensPorId = new Map(itensMestre.map(item => [String(item.id), item]));
+
+    const dados = vinculos.map(vinculo => {
+      const local = locaisPorId.get(String(vinculo.local_id));
+      const item = itensPorId.get(String(vinculo.item_id));
+      if (!local || !item) return null;
+      return { local_id: local.id, item_id: item.id, setor: local.nome, item: item.descricao, ordem: vinculo.ordem || 0, status: 'C' };
+    }).filter(Boolean);
+
+    dados.sort((a, b) => {
+      const porLocal = a.setor.localeCompare(b.setor, 'pt-BR', { sensitivity: 'base' });
+      if (porLocal !== 0) return porLocal;
+      return (a.ordem || 0) - (b.ordem || 0);
+    });
+    return dados;
+  }
+
+  async function carregarModeloChecklist() {
+    checklistEl.innerHTML = '<div style="padding:16px;text-align:center;">Carregando checklist...</div>';
+    selectLocal.disabled = true;
+    selectLocal.innerHTML = '<option value="ALL">Carregando locais...</option>';
+
+    let vistoria = null;
+
+    try {
+      vistoria = await carregarVistoriaAtual();
+      const vistoriaId = getVistoriaId();
+      const snapshot = vistoriaId
+        ? await carregarSnapshotVistoria(vistoriaId)
+        : [];
+
+      if (snapshot.length) {
+        initialData = snapshot;
+      } else {
+        initialData = vistoria?.modelo_id
+          ? await carregarModeloPersonalizado(vistoria.modelo_id)
+          : await carregarModeloLegado();
+      }
+
+      if (!initialData.length) {
+        throw new Error(vistoria?.modelo_id
+          ? 'O modelo selecionado não possui locais e itens ativos.'
+          : 'Nenhum item ativo foi encontrado na matriz do checklist.');
+      }
+
+      if (window.ChecklistOffline) {
+        window.ChecklistOffline.saveModel(vistoria, initialData);
+      }
+    } catch (erroOnline) {
+      const cache = window.ChecklistOffline?.loadModel();
+
+      if (!cache?.modelo?.length) {
+        throw erroOnline;
+      }
+
+      console.warn('Servidor indisponível. Usando cache offline.', erroOnline);
+      vistoria = cache.vistoria || null;
+      initialData = cache.modelo;
+      preencherMetadados(vistoria);
+      window.ChecklistOffline?.updateNetworkStatus();
+    }
+
+    populateLocalMenu();
+    renderAllSections(initialData);
+    selectLocal.disabled = false;
+    const primeiroLocal = getUniqueSetores(initialData)[0] || 'ALL';
+    selectLocal.value = primeiroLocal;
+    showLocal(primeiroLocal, false);
+  }
+
+  function getUniqueSetores(data) { return [...new Set(data.map(item => item.setor))]; }
+
+  function populateLocalMenu() {
+    const setores = getUniqueSetores(initialData);
+    selectLocal.innerHTML = '<option value="ALL">Todos os locais</option>';
+    setores.forEach(setor => {
+      const option = document.createElement('option');
+      option.value = setor;
+      option.textContent = setor;
+      selectLocal.appendChild(option);
+    });
+  }
+
+  function createRadio(name, val, checked) {
+    const radio = document.createElement('input');
+    radio.type = 'radio'; radio.name = name; radio.value = val; radio.checked = !!checked;
+    radio.style.width = '18px'; radio.style.height = '18px';
+    return radio;
+  }
+
+  function atualizarEstadoLinha(row, camposNC, rNC) {
+    if (rNC.checked) {
+      camposNC.style.display = 'block';
+      row.classList.add('is-nc');
+      const dataNC = row.querySelector('.data-nc');
+      if (dataNC && !dataNC.value) dataNC.value = campoDataAuditoria.value || '';
+    } else {
+      camposNC.style.display = 'none';
+      row.classList.remove('is-nc');
+      row.querySelectorAll('.obs-required').forEach(el => el.classList.remove('obs-required'));
+    }
+  }
+
+  function renderAllSections(data) {
+    checklistEl.innerHTML = '';
+    const sections = {};
+
+    data.forEach((d, idx) => {
+      if (!sections[d.setor]) {
+        const section = document.createElement('section');
+        section.className = 'sector'; section.dataset.setor = d.setor; section.dataset.localId = d.local_id || ''; section.style.display = 'none';
+        const h = document.createElement('h2'); h.textContent = d.setor; section.appendChild(h);
+        checklistEl.appendChild(section); sections[d.setor] = section;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'item-row'; row.dataset.setor = d.setor; row.dataset.item = d.item; row.dataset.localId = d.local_id || ''; row.dataset.itemId = d.item_id || '';
+      const main = document.createElement('div'); main.className = 'row-main';
+      const lbl = document.createElement('div'); lbl.className = 'item-label'; lbl.textContent = d.item; main.appendChild(lbl);
+      const opts = document.createElement('div'); opts.className = 'options';
+      const name = `radio_${idx}`;
+      const statusAtual = d.status || 'C';
+      const rC = createRadio(name, 'C', statusAtual === 'C');
+      const rNC = createRadio(name, 'NC', statusAtual === 'NC');
+      const rNA = createRadio(name, 'NA', statusAtual === 'NA');
+      [[rC,'C'],[rNC,'N/C'],[rNA,'N/A']].forEach(([radio,texto]) => {
+        const label = document.createElement('label'); label.appendChild(radio); label.appendChild(document.createTextNode(texto)); opts.appendChild(label);
+      });
+      main.appendChild(opts); row.appendChild(main);
+
+      const camposNC = document.createElement('div');
+      camposNC.className = 'campos-nc';
+      camposNC.style.display = 'none';
+
+      const obs = document.createElement('textarea');
+      obs.className = 'obs'; obs.placeholder = 'Observação (obrigatória quando N/C)'; obs.rows = 2;
+      obs.value = d.observacao || '';
+      camposNC.appendChild(obs);
+
+      const responsavel = document.createElement('input');
+      responsavel.type = 'text'; responsavel.className = 'responsavel-nc'; responsavel.placeholder = 'Responsável pela adequação';
+      responsavel.value = d.responsavel_nc || '';
+      camposNC.appendChild(responsavel);
+
+      const dataNC = document.createElement('input');
+      dataNC.type = 'date'; dataNC.className = 'data-nc';
+      dataNC.value = d.data_nc || '';
+      camposNC.appendChild(dataNC);
+      row.appendChild(camposNC);
+
+      atualizarEstadoLinha(row, camposNC, rNC);
+
+      [rC, rNC, rNA].forEach(radio => radio.addEventListener('change', () => {
+        atualizarEstadoLinha(row, camposNC, rNC);
+        if (!rNC.checked) { obs.value = ''; responsavel.value = ''; dataNC.value = ''; }
+      }));
+
+      sections[d.setor].appendChild(row);
+    });
+  }
+
+  campoDataAuditoria.addEventListener('change', () => {
+    document.querySelectorAll('.item-row').forEach(row => {
+      const nc = row.querySelector('input[type="radio"][value="NC"]');
+      const dataNC = row.querySelector('.data-nc');
+      if (nc?.checked && dataNC && !dataNC.dataset.alteradaUsuario) dataNC.value = campoDataAuditoria.value || '';
+    });
+  });
+
+  document.addEventListener('change', event => {
+    if (event.target?.classList?.contains('data-nc')) event.target.dataset.alteradaUsuario = 'true';
+    if (monitorarAlteracoes && event.target !== selectLocal) alteracoesNaoSalvas = true;
+  });
+
+  document.addEventListener('input', event => {
+    if (!monitorarAlteracoes) return;
+    if (event.target.closest?.('#saida-overlay')) return;
+    if (event.target === selectLocal) return;
+    alteracoesNaoSalvas = true;
+  });
+
+  function atualizarProgressoLocal(local) {
+    const setores = getUniqueSetores(initialData);
+    if (!setores.length) { localProgresso.textContent = 'Nenhum local'; return; }
+    if (local === 'ALL') {
+      localProgresso.textContent = `Todos os locais • ${setores.length} locais`;
+      return;
+    }
+    const indice = setores.indexOf(local);
+    localProgresso.textContent = indice >= 0
+      ? `Local ${indice + 1} de ${setores.length} • ${local}`
+      : local;
+  }
+
+  function showLocal(local, rolar = true) {
+    checklistEl.querySelectorAll('.sector').forEach(section => {
+      section.style.display = local === 'ALL' || section.dataset.setor === local ? 'block' : 'none';
+    });
+    atualizarProgressoLocal(local);
+    if (rolar) checklistEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  selectLocal.addEventListener('change', () => showLocal(selectLocal.value));
+
+  function carregarScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script'); script.src = src; script.onload = resolve;
+      script.onerror = () => reject(new Error(`Não foi possível carregar ${src}`)); document.body.appendChild(script);
+    });
+  }
+
+  function fecharDialogSaida() { saidaOverlay.classList.remove('aberto'); }
+  function abrirDialogSaida() { saidaOverlay.classList.add('aberto'); }
+
+  function voltarParaTelaAnterior() {
+    if (window.history.length > 1) window.history.back();
+    else window.location.href = 'index.html';
+  }
+
+  async function salvarAntesDeVoltar() {
+    if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+    btnSalvarVoltar.disabled = true;
+    btnSalvarVoltar.textContent = 'Salvando...';
+    try {
+      const resultado = await window.VistoriaDB.salvarVistoria();
+      if (!resultado) return;
+      alteracoesNaoSalvas = false;
+      fecharDialogSaida();
+      voltarParaTelaAnterior();
+    } finally {
+      btnSalvarVoltar.disabled = false;
+      btnSalvarVoltar.textContent = 'Salvar e voltar';
+    }
+  }
+
+  async function iniciarAplicacao() {
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js?v=1')
+          .catch(erro => console.warn('Service Worker não registrado.', erro));
+      }
+
+      await carregarModeloChecklist();
+      await carregarScript('persist.js?v=14');
+      await carregarScript('speech.js?v=13');
+      await carregarScript('db-v8.js?v=17');
+      await carregarScript('photo.js?v=13');
+      await carregarScript('gps.js?v=1');
+
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        alteracoesNaoSalvas = false;
+        monitorarAlteracoes = true;
+      }));
+
+      btnSalvarMeta.addEventListener('click', async () => {
+        if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+        const resultado = await window.VistoriaDB.salvarVistoria();
+        if (resultado) alteracoesNaoSalvas = false;
+      });
+
+      btnConcluirChecklist.addEventListener('click', async () => {
+        if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+        const confirmar = confirm('Deseja concluir este checklist?\n\nApós a conclusão, a vistoria será marcada como finalizada.');
+        if (!confirmar) return;
+        await window.VistoriaDB.concluirVistoria();
+      });
+
+      btnCancelarChecklist.addEventListener('click', async () => {
+        if (!window.VistoriaDB) { alert('Módulo do banco não carregado.'); return; }
+        await window.VistoriaDB.cancelarVistoria();
+      });
+
+      btnVoltarVistoria.addEventListener('click', () => {
+        if (alteracoesNaoSalvas) abrirDialogSaida();
+        else voltarParaTelaAnterior();
+      });
+
+      btnSalvarVoltar.addEventListener('click', salvarAntesDeVoltar);
+      btnSairSemSalvar.addEventListener('click', () => {
+        alteracoesNaoSalvas = false;
+        fecharDialogSaida();
+        voltarParaTelaAnterior();
+      });
+      btnFecharSaida.addEventListener('click', fecharDialogSaida);
+      saidaOverlay.addEventListener('click', event => {
+        if (event.target === saidaOverlay) fecharDialogSaida();
+      });
+    } catch (erro) {
+      console.error('Erro ao iniciar checklist:', erro);
+      checklistEl.innerHTML = `<div style="padding:16px;margin:12px;border:1px solid #e3a6a6;border-radius:8px;background:#fff1f1;color:#a11;">Não foi possível carregar o checklist.<br><br>${String(erro.message || erro)}</div>`;
+      selectLocal.innerHTML = '<option value="ALL">Erro ao carregar locais</option>'; selectLocal.disabled = true;
+      localProgresso.textContent = 'Erro ao carregar locais';
+    }
+  }
+
+  iniciarAplicacao();
+})();
+</script>
+</body>
+</html>
