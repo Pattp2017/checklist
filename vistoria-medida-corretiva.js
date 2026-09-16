@@ -4,7 +4,7 @@
 // =========================================================
 (function () {
   const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
+  const SUPABASE_KEY = 'sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8';
   const cacheSnapshot = new Map();
   const cacheMestre = new Map();
   const timers = new WeakMap();
