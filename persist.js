@@ -34,7 +34,7 @@
   async function carregarDadosVistoria() {
     const vistoriaId = getVistoriaId(); if (!vistoriaId) return null;
     const SUPABASE_URL = 'https://dbleblnwolbbxtscjxif.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjZc7CswobVg_0BlBfRSd';
+    const SUPABASE_KEY = 'sb_publishable_RIq2RdCrwvjvZc7CswobVg_0BlBfRSd';
     try {
       const resposta = await fetch(`${SUPABASE_URL}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=*`, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
       const texto = await resposta.text(); if (!resposta.ok) throw new Error(texto || 'Erro ao carregar vistoria.');
@@ -73,7 +73,6 @@
     if (it.photo) row.dataset.temFoto = 'true'; else delete row.dataset.temFoto;
     const marcado = row.querySelector('input[type="radio"]:checked');
     if (marcado) marcado.dispatchEvent(new Event('change', { bubbles: true }));
-    // O change acima exibe os campos. Restauramos os valores depois para evitar limpeza acidental.
     if (it.status === 'NC') {
       if (textarea) textarea.value = it.obs || '';
       if (responsavel) responsavel.value = it.responsavel_nc || '';
