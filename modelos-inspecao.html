@@ -1196,12 +1196,11 @@
 
     if (!vinculos.length) return [];
 
-    const ids = vinculos.map(v => v.item_id).join(',');
-
+    // Busca o cadastro mestre completo e cruza localmente.
+    // Evita filtro PostgREST "in.(uuid,...)" que estava interrompendo o botão Editar.
     const mestres = await api(
       'checklist_itens_mestre' +
-      '?id=in.(' + ids + ')' +
-      '&ativo=eq.true' +
+      '?ativo=eq.true' +
       '&select=id,descricao'
     ) || [];
 
