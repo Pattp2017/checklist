@@ -1182,6 +1182,41 @@
   }
 
 
+  async function carregarItensDoLocalMestre(localMestreId) {
+
+    if (!localMestreId) return [];
+
+    const vinculos = await api(
+      'checklist_local_itens' +
+      '?local_id=eq.' + localMestreId +
+      '&ativo=eq.true' +
+      '&select=item_id,ordem' +
+      '&order=ordem.asc'
+    ) || [];
+
+    if (!vinculos.length) return [];
+
+    const ids = vinculos.map(v => v.item_id).join(',');
+
+    const mestres = await api(
+      'checklist_itens_mestre' +
+      '?id=in.(' + ids + ')' +
+      '&ativo=eq.true' +
+      '&select=id,descricao'
+    ) || [];
+
+    const porId = new Map(mestres.map(i => [i.id, i]));
+
+    return vinculos
+      .map(v => porId.get(v.item_id))
+      .filter(Boolean)
+      .map(i => ({
+        item_mestre_id: i.id,
+        texto: i.descricao
+      }));
+  }
+
+
   async function carregarEstrutura(id) {
 
     const [mr, lr, ir] =
@@ -1254,24 +1289,33 @@
     });
 
 
+    const locaisEstrutura = [];
+
+    for (const l of (lr || [])) {
+
+      let itens =
+        porLocal.get(l.id) || [];
+
+      // Locais/equipamentos novos vinculados ao cadastro mestre
+      // herdam automaticamente os itens cadastrados em checklist_local_itens.
+      if (!itens.length && l.local_mestre_id) {
+        itens =
+          await carregarItensDoLocalMestre(l.local_mestre_id);
+      }
+
+      locaisEstrutura.push({
+        local_mestre_id:
+          l.local_mestre_id || null,
+        nome:
+          l.nome,
+        itens
+      });
+    }
+
+
     return {
-
       m,
-
-      locais:
-        (lr || []).map(l => ({
-
-          local_mestre_id:
-            l.local_mestre_id || null,
-
-          nome:
-            l.nome,
-
-          itens:
-            porLocal.get(l.id) || []
-
-        }))
-
+      locais: locaisEstrutura
     };
   }
 
