@@ -1063,7 +1063,9 @@
                       const mestre = locaisMestre.find(x => x.id === l.local_mestre_id);
                       return mestre?.tipo === 'equipamento'
                         ? '<span class="badge-tipo">⚙ Equipamento</span>'
-                        : '<span class="badge-tipo">📍 Local</span>';
+                        : mestre?.tipo === 'documentacao'
+                          ? '<span class="badge-tipo">📄 Documentação</span>'
+                          : '<span class="badge-tipo">📍 Local</span>';
                     })()
               }
 
@@ -1432,10 +1434,13 @@
 
 
       const locaisFisicos =
-        arr.filter(l => (l.tipo || 'local') !== 'equipamento');
+        arr.filter(l => (l.tipo || 'local') === 'local');
 
       const equipamentos =
         arr.filter(l => l.tipo === 'equipamento');
+
+      const documentacao =
+        arr.filter(l => l.tipo === 'documentacao');
 
       const renderOpcoes = lista =>
         lista.map(l => `
@@ -1478,6 +1483,22 @@
             ${categorias.map(cat => `
               <div class="selecao-subgrupo">${esc(cat)}</div>
               ${renderOpcoes(equipamentos.filter(l => (l.categoria || 'Outros equipamentos') === cat))}
+            `).join('')}
+          </div>
+        `;
+      }
+
+      if (documentacao.length) {
+        const categoriasDoc = [...new Set(
+          documentacao.map(l => l.categoria || 'Documentação')
+        )];
+
+        html += `
+          <div class="selecao-grupo">
+            <div class="selecao-grupo-titulo">📄 DOCUMENTAÇÃO</div>
+            ${categoriasDoc.map(cat => `
+              <div class="selecao-subgrupo">${esc(cat)}</div>
+              ${renderOpcoes(documentacao.filter(l => (l.categoria || 'Documentação') === cat))}
             `).join('')}
           </div>
         `;
