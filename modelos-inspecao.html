@@ -373,6 +373,46 @@
       font-weight: 400;
     }
 
+    .badge-tipo {
+      display: inline-block;
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 10px;
+      margin-left: 6px;
+      font-weight: 700;
+      background: #e8eef5;
+      color: #163a5f;
+    }
+
+    .selecao-grupo {
+      margin-top: 14px;
+      border: 1px solid #d9dee5;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .selecao-grupo-titulo {
+      padding: 10px 12px;
+      background: #eef3f8;
+      color: #163a5f;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .selecao-subgrupo {
+      padding: 9px 10px 3px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .selecao-grupo .selecao-item {
+      margin: 8px;
+    }
+
     @media(max-width:650px) {
       .grid {
         grid-template-columns: 1fr;
@@ -769,7 +809,7 @@
         api(
           'checklist_locais' +
           '?ativo=eq.true' +
-          '&select=id,nome,ordem' +
+          '&select=id,nome,ordem,tipo,categoria' +
           '&order=ordem.asc.nullslast,nome.asc'
         ),
 
@@ -1019,7 +1059,12 @@
               ${
                 !l.local_mestre_id
                   ? '<span class="badge-legado">legado</span>'
-                  : ''
+                  : (() => {
+                      const mestre = locaisMestre.find(x => x.id === l.local_mestre_id);
+                      return mestre?.tipo === 'equipamento'
+                        ? '<span class="badge-tipo">⚙ Equipamento</span>'
+                        : '<span class="badge-tipo">📍 Local</span>';
+                    })()
               }
 
             </div>
@@ -1371,21 +1416,29 @@
       const arr =
         locaisMestre.filter(l =>
           !q ||
-          norm(l.nome).includes(q)
+          norm(l.nome).includes(q) ||
+          norm(l.categoria).includes(q) ||
+          norm(l.tipo).includes(q)
         );
 
 
       if (!arr.length) {
 
         modalLista.innerHTML =
-          '<div class="vazio">Nenhum local encontrado.</div>';
+          '<div class="vazio">Nenhum local ou equipamento encontrado.</div>';
 
         return;
       }
 
 
-      modalLista.innerHTML =
-        arr.map(l => `
+      const locaisFisicos =
+        arr.filter(l => (l.tipo || 'local') !== 'equipamento');
+
+      const equipamentos =
+        arr.filter(l => l.tipo === 'equipamento');
+
+      const renderOpcoes = lista =>
+        lista.map(l => `
 
           <label class="selecao-item">
 
@@ -1402,6 +1455,35 @@
           </label>
 
         `).join('');
+
+      let html = '';
+
+      if (locaisFisicos.length) {
+        html += `
+          <div class="selecao-grupo">
+            <div class="selecao-grupo-titulo">📍 LOCAIS / ÁREAS</div>
+            ${renderOpcoes(locaisFisicos)}
+          </div>
+        `;
+      }
+
+      if (equipamentos.length) {
+        const categorias = [...new Set(
+          equipamentos.map(l => l.categoria || 'Outros equipamentos')
+        )];
+
+        html += `
+          <div class="selecao-grupo">
+            <div class="selecao-grupo-titulo">⚙️ EQUIPAMENTOS</div>
+            ${categorias.map(cat => `
+              <div class="selecao-subgrupo">${esc(cat)}</div>
+              ${renderOpcoes(equipamentos.filter(l => (l.categoria || 'Outros equipamentos') === cat))}
+            `).join('')}
+          </div>
+        `;
+      }
+
+      modalLista.innerHTML = html;
 
       return;
     }
