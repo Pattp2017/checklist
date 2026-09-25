@@ -47,28 +47,33 @@
   }
 
   function setNetworkBorder(online) {
-    let style = document.getElementById('checklist-network-border-style');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'checklist-network-border-style';
-      style.textContent = `
-        html::after {
-          content: '';
-          position: fixed;
-          inset: 0;
-          pointer-events: none;
-          z-index: 2147483647;
-          border: 2px solid var(--checklist-network-color, #22c55e);
-          box-sizing: border-box;
-          transition: border-color .25s ease;
-        }
-      `;
-      document.head.appendChild(style);
+    // Elemento próprio em vez de pseudo-elemento do <html>.
+    // Em navegadores móveis o html::after pode acompanhar a área rolável
+    // quando a barra do navegador muda de tamanho, dando a impressão de
+    // que o retângulo "anda" pela tela.
+    let border = document.getElementById('checklist-network-border');
+    if (!border) {
+      border = document.createElement('div');
+      border.id = 'checklist-network-border';
+      border.setAttribute('aria-hidden', 'true');
+      border.style.cssText = [
+        'position:fixed',
+        'top:0',
+        'right:0',
+        'bottom:0',
+        'left:0',
+        'width:100vw',
+        'height:100dvh',
+        'box-sizing:border-box',
+        'pointer-events:none',
+        'z-index:2147483647',
+        'border:3px solid #22c55e',
+        'transition:border-color .25s ease',
+        'transform:translateZ(0)'
+      ].join(';');
+      (document.body || document.documentElement).appendChild(border);
     }
-    document.documentElement.style.setProperty(
-      '--checklist-network-color',
-      online ? '#22c55e' : '#f59e0b'
-    );
+    border.style.borderColor = online ? '#22c55e' : '#f59e0b';
   }
 
   function updateNetworkStatus() {
