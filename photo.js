@@ -6,6 +6,8 @@
   const fotosPendentes = new Map();
   const DB_NAME = 'checklist_fotos_offline';
   const DB_VERSION = 1;
+  const FOTO_MAX_DIMENSAO = 1600;
+  const FOTO_QUALIDADE = 0.78;
   const STORE = 'fotos';
   let dbPromise = null;
 
@@ -123,16 +125,43 @@
     await idbRemover(chave);
   }
 
+  async function comprimirFoto(arquivo) {
+    if (!arquivo || !arquivo.type?.startsWith('image/')) return arquivo;
+    const bitmap = await createImageBitmap(arquivo);
+    const escala = Math.min(1, FOTO_MAX_DIMENSAO / Math.max(bitmap.width, bitmap.height));
+    const largura = Math.max(1, Math.round(bitmap.width * escala));
+    const altura = Math.max(1, Math.round(bitmap.height * escala));
+    const canvas = document.createElement('canvas');
+    canvas.width = largura;
+    canvas.height = altura;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.drawImage(bitmap, 0, 0, largura, altura);
+    bitmap.close?.();
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Falha ao comprimir foto.')), 'image/jpeg', FOTO_QUALIDADE);
+    });
+    return new File([blob], 'foto-' + Date.now() + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+  }
+
   async function registrarFoto(row, arquivo) {
     const chave = getChaveItem(row);
-    fotosPendentes.set(chave, arquivo);
-    marcarBotao(row, true);
     try {
-      await idbSalvar(chave, arquivo);
-      console.log('Foto preservada no aparelho:', chave, arquivo.name, arquivo.size);
+      marcarBotao(row, false);
+      const botao = row.querySelector('.btn-foto');
+      if (botao) { botao.disabled = true; botao.textContent = '📷 Salvando...'; }
+      const fotoOtimizada = await comprimirFoto(arquivo);
+      await idbSalvar(chave, fotoOtimizada);
+      fotosPendentes.set(chave, fotoOtimizada);
+      marcarBotao(row, true);
+      if (botao) botao.disabled = false;
+      console.log('Foto preservada no aparelho:', chave, fotoOtimizada.name, fotoOtimizada.size);
     } catch (e) {
+      fotosPendentes.delete(chave);
+      marcarBotao(row, false);
+      const botao = row.querySelector('.btn-foto');
+      if (botao) botao.disabled = false;
       console.error('Falha ao preservar foto no aparelho:', e);
-      alert('A foto foi anexada nesta tela, mas não pôde ser armazenada para uso offline.');
+      alert('A foto não pôde ser armazenada no aparelho. O checklist pode continuar normalmente.');
     }
   }
 
@@ -211,16 +240,12 @@
     if (row) atualizarFoto(row);
   });
 
-  const observer = new MutationObserver(function () {
-    document.querySelectorAll('.item-row').forEach(atualizarFoto);
-  });
-
   async function iniciar() {
-    const checklist = document.getElementById('checklist');
-    if (checklist) observer.observe(checklist, { childList: true, subtree: true });
+    // Sem MutationObserver global: alterações em uma foto não podem disparar
+    // uma nova varredura de todas as linhas do checklist.
     document.querySelectorAll('.item-row').forEach(atualizarFoto);
-    // O checklist pode ser montado de forma assíncrona; restaura agora e novamente logo depois.
     await restaurarFotos();
+    // A montagem do checklist é assíncrona. Uma única restauração tardia é suficiente.
     setTimeout(restaurarFotos, 1200);
   }
 
