@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Mapa de Risco - PGRTR</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937}
+    .topo{background:#fff;border-bottom:1px solid #d9dee5;padding:16px 20px}.topo-in{max-width:900px;margin:auto;display:flex;align-items:center;gap:14px}.voltar{text-decoration:none;color:#163a5f;font-weight:700}.topo h1{margin:0;font-size:21px;color:#163a5f}
+    .container{max-width:900px;margin:auto;padding:28px 18px}.card{background:#fff;border:1px solid #d9dee5;border-radius:12px;padding:20px;margin-bottom:16px}
+    h2{margin:0 0 8px;font-size:18px;color:#163a5f}p{margin:6px 0;color:#5b6470;line-height:1.45}.upload{margin-top:18px;border:2px dashed #b9c3cf;border-radius:12px;padding:26px;text-align:center;background:#fafbfc}
+    input[type=file]{display:none}.btn{border:0;border-radius:9px;background:#163a5f;color:#fff;font-weight:700;padding:12px 16px;cursor:pointer;font-size:14px}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.sec{background:#e8eef4;color:#163a5f}
+    .arquivo{font-weight:700;margin-top:12px;color:#334155}.status{margin-top:14px;padding:11px 12px;border-radius:8px;background:#eef4f8;color:#163a5f;display:none}.status.erro{background:#fff1f1;color:#991b1b}
+    .ambientes{display:grid;gap:9px;margin-top:14px}.amb{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #d9dee5;border-radius:9px;background:#fafbfc}.amb input{width:18px;height:18px}.amb label{font-weight:700;flex:1}
+    .acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.muted{font-size:12px;color:#7b8490}.oculto{display:none}
+  </style>
+</head>
+<body>
+<header class="topo"><div class="topo-in"><a class="voltar" href="index.html">← Início</a><h1>Gerador de Mapa de Risco</h1></div></header>
+<main class="container">
+  <section class="card">
+    <h2>1. Carregar PGRTR</h2>
+    <p>Selecione o PGRTR em PDF. Nesta primeira etapa o sistema identifica os ambientes encontrados no documento para sua conferência.</p>
+    <div class="upload">
+      <label class="btn" for="pdfInput">Escolher PGRTR</label>
+      <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+      <div id="arquivo" class="arquivo">Nenhum arquivo selecionado</div>
+      <div class="acoes" style="justify-content:center"><button id="processar" class="btn" disabled>Processar PGRTR</button></div>
+    </div>
+    <div id="status" class="status" aria-live="polite"></div>
+  </section>
+
+  <section id="resultado" class="card oculto">
+    <h2>2. Ambientes encontrados</h2>
+    <p>Confira antes de continuar. Você pode desmarcar o que não deverá gerar mapa.</p>
+    <div id="ambientes" class="ambientes"></div>
+    <div class="acoes">
+      <button id="adicionar" class="btn sec" type="button">+ Adicionar ambiente</button>
+      <button id="continuar" class="btn" type="button">Continuar</button>
+    </div>
+    <p class="muted">A geração e edição dos riscos será adicionada na próxima etapa após validarmos a leitura dos PGRTRs reais.</p>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  const input=document.getElementById('pdfInput'),processar=document.getElementById('processar'),arquivo=document.getElementById('arquivo'),statusEl=document.getElementById('status'),resultado=document.getElementById('resultado'),lista=document.getElementById('ambientes');
+  let arquivoPdf=null;
+  if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  input.addEventListener('change',()=>{
+    arquivoPdf=input.files&&input.files[0]||null;
+    arquivo.textContent=arquivoPdf?arquivoPdf.name:'Nenhum arquivo selecionado';
+    processar.disabled=!arquivoPdf;
+    resultado.classList.add('oculto');
+  });
+
+  function mostrarStatus(msg,erro=false){statusEl.textContent=msg;statusEl.style.display='block';statusEl.classList.toggle('erro',erro)}
+  function normalizar(s){return s.replace(/\s+/g,' ').trim()}
+  function ambientesDoTexto(texto){
+    const achados=new Set();
+    const linhas=texto.split(/\n+/).map(normalizar).filter(Boolean);
+    const conhecidos=['ADMINISTRAÇÃO DO CAMPO','ADMINISTRACAO DO CAMPO','AGROINDUSTRIA','AGROINDÚSTRIA','MANUTENÇÃO','MANUTENCAO','OPERACIONAL CAMPO'];
+    conhecidos.forEach(n=>{if(texto.toUpperCase().includes(n)) achados.add(n.normalize('NFD').replace(/[\u0300-\u036f]/g,'')==='ADMINISTRACAO DO CAMPO'?'ADMINISTRAÇÃO DO CAMPO':n.normalize('NFD').replace(/[\u0300-\u036f]/g,'')==='MANUTENCAO'?'MANUTENÇÃO':n.normalize('NFD').replace(/[\u0300-\u036f]/g,'')==='AGROINDUSTRIA'?'AGROINDÚSTRIA':n)});
+    linhas.forEach((l,i)=>{
+      if(/ambiente(s)?\s*(de\s*trabalho)?\s*[:\-]?$/i.test(l)){
+        const prox=linhas[i+1]||'';
+        if(prox.length>=3&&prox.length<=80&&!/descri|cargo|risco|setor/i.test(prox)) achados.add(prox.toUpperCase());
+      }
+      const m=l.match(/ambiente(?:\s+de\s+trabalho)?\s*[:\-]\s*(.{3,80})$/i);
+      if(m){const v=m[1].split(/\s{2,}|\|/)[0].trim();if(v) achados.add(v.toUpperCase())}
+    });
+    return [...achados].filter(x=>x.length<90);
+  }
+  function renderAmbientes(arr){
+    lista.innerHTML='';
+    arr.forEach((nome,i)=>{
+      const d=document.createElement('div');d.className='amb';
+      d.innerHTML='<input type="checkbox" checked id="amb'+i+'"><label for="amb'+i+'"></label><button type="button" class="btn sec">Editar</button>';
+      d.querySelector('label').textContent=nome;
+      d.querySelector('button').addEventListener('click',()=>{const n=prompt('Nome do ambiente:',d.querySelector('label').textContent);if(n&&n.trim())d.querySelector('label').textContent=n.trim()});
+      lista.appendChild(d);
+    });
+  }
+
+  processar.addEventListener('click',async()=>{
+    if(!arquivoPdf)return;
+    if(!window.pdfjsLib){mostrarStatus('Não foi possível carregar o leitor de PDF. Verifique a conexão com a internet.',true);return}
+    processar.disabled=true;mostrarStatus('Lendo o PGRTR...');
+    try{
+      const dados=await arquivoPdf.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:dados}).promise;
+      let texto='';
+      for(let p=1;p<=pdf.numPages;p++){
+        mostrarStatus('Lendo página '+p+' de '+pdf.numPages+'...');
+        const pg=await pdf.getPage(p),conteudo=await pg.getTextContent();
+        texto+='\n'+conteudo.items.map(x=>x.str).join(' ')+'\n';
+      }
+      const ambientes=ambientesDoTexto(texto);
+      if(!ambientes.length){mostrarStatus('PDF lido, mas nenhum ambiente foi identificado automaticamente. Você pode adicioná-los manualmente.',true)}
+      else mostrarStatus('Leitura concluída. '+ambientes.length+' ambiente(s) identificado(s).');
+      renderAmbientes(ambientes);resultado.classList.remove('oculto');
+    }catch(e){mostrarStatus('Não foi possível ler este PDF: '+(e.message||'erro desconhecido'),true)}
+    finally{processar.disabled=false}
+  });
+
+  document.getElementById('adicionar').addEventListener('click',()=>{
+    const n=prompt('Nome do ambiente:');if(!n||!n.trim())return;
+    const atuais=[...lista.querySelectorAll('label')].map(x=>x.textContent);renderAmbientes([...atuais,n.trim().toUpperCase()]);
+  });
+  document.getElementById('continuar').addEventListener('click',()=>alert('Primeira etapa concluída. Agora validaremos a extração dos ambientes antes de ligar a geração dos riscos.'));
+</script>
+</body>
+</html>
