@@ -212,7 +212,7 @@
         try {
           const itens = getItensChecklist(vistoriaId);
           if (guardarPendente(vistoriaId, dados, itens)) {
-            alert('A conexão falhou, mas a vistoria foi salva neste aparelho.\n\nA sincronização será tentada quando a internet voltar.');
+            alert('Não foi possível confirmar a gravação no Supabase.\n\nOs dados foram guardados neste aparelho para nova tentativa.\n\nMotivo: ' + (erro?.message || String(erro)));
             return { id: vistoriaId, ...dados, pendente_sync: true };
           }
         } catch (_) {}
