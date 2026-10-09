@@ -125,7 +125,7 @@
       const campos = row.querySelector('.campos-nc'); if (campos) campos.style.display = 'block';
       if (alvo) { alvo.classList.add('obs-required'); alvo.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => alvo.focus(), 300); }
     }
-    alert(`Existem ${pendentes.length} item(ns) N/C com dados incompletos.\n\nPreencha observação, responsável e data antes de salvar.`);
+    const detalhes = pendentes.slice(0, 8).map((item, indice) => { const faltam = []; if (!item.obs || item.obs.trim().length < 3) faltam.push('observação'); if (!item.responsavel_nc || !item.responsavel_nc.trim()) faltam.push('responsável'); if (!item.data_nc) faltam.push('data'); return `${indice + 1}. Local: ${item.setor || 'Não informado'}\nItem: ${item.item || 'Não informado'}\nFalta: ${faltam.join(', ')}`; }).join('\n\n'); alert(`${pendentes.length} item(ns) N/C com dados incompletos:\n\n${detalhes}${pendentes.length > 8 ? '\n\nE mais ' + (pendentes.length - 8) + ' item(ns).' : ''}`);
     return false;
   }
 
