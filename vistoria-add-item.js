@@ -35,16 +35,88 @@
   function salvarFila(fila) { salvarJSON(FILA, fila); }
 
   function criarBotoesLocais() {
-    document.querySelectorAll('.btn-adicionar-item-local').forEach(b => b.remove());
+    document.querySelectorAll('.acoes-local-extra').forEach(b => b.remove());
     document.querySelectorAll('.sector').forEach(section => {
       const local = section.dataset.setor || '';
       if (!local) return;
+      const grupo = document.createElement('div'); grupo.className = 'acoes-local-extra';
+      grupo.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px';
+      const adicionarLocal = document.createElement('button');
+      adicionarLocal.type = 'button'; adicionarLocal.className = 'btn';
+      adicionarLocal.textContent = '+ Adicionar local';
+      adicionarLocal.addEventListener('click', abrirSelecaoLocais);
       const botao = document.createElement('button');
       botao.type = 'button'; botao.className = 'btn btn-adicionar-item-local'; botao.textContent = '+ Adicionar item'; botao.dataset.local = local;
-      botao.addEventListener('click', () => abrir(local)); section.appendChild(botao);
+      botao.addEventListener('click', () => abrir(local));
+      grupo.append(adicionarLocal, botao); section.appendChild(grupo);
     });
   }
 
+
+  const LOCAIS_KEY = 'checklist_locais_disponiveis_v1';
+  async function abrirSelecaoLocais() {
+    const vistoriaId = getVistoriaId();
+    if (!vistoriaId) return alert('Vistoria não identificada.');
+    let locais = lerJSON(LOCAIS_KEY, []);
+    if (navigator.onLine) {
+      try {
+        locais = await api('checklist_locais?ativo=eq.true&select=id,nome&order=nome.asc') || [];
+        salvarJSON(LOCAIS_KEY, locais);
+      } catch (e) { console.warn('Usando locais em cache.', e); }
+    }
+    if (!locais.length) return alert('Locais indisponíveis. Abra esta função uma vez com internet.');
+    const existentes = new Set([...document.querySelectorAll('.sector')].map(e => norm(e.dataset.setor)));
+    const disponiveis = locais.filter(l => !existentes.has(norm(l.nome)));
+    if (!disponiveis.length) return alert('Todos os locais cadastrados já estão nesta vistoria.');
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:11000;background:#0009;display:flex;align-items:center;justify-content:center;padding:16px';
+    const painel = document.createElement('div');
+    painel.style.cssText = 'background:#fff;border-radius:12px;padding:18px;width:min(480px,100%);max-height:85vh;overflow:auto';
+    painel.innerHTML = '<h3>Adicionar locais cadastrados</h3><input type="search" placeholder="Pesquisar local" style="width:100%;padding:10px;margin:8px 0"><div class="lista-locais"></div><div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="fechar-local">Cancelar</button><button type="button" class="confirmar-local">Adicionar selecionados</button></div>';
+    overlay.appendChild(painel); document.body.appendChild(overlay);
+    const lista = painel.querySelector('.lista-locais');
+    const render = () => {
+      const termo = norm(painel.querySelector('input').value);
+      lista.innerHTML = disponiveis.filter(l => norm(l.nome).includes(termo)).map(l => '<label style="display:block;padding:8px"><input type="checkbox" value="'+esc(l.id)+'"> '+esc(l.nome)+'</label>').join('');
+    };
+    painel.querySelector('input').addEventListener('input', render); render();
+    painel.querySelector('.fechar-local').onclick = () => overlay.remove();
+    painel.querySelector('.confirmar-local').onclick = async () => {
+      const ids = new Set([...lista.querySelectorAll('input:checked')].map(x => String(x.value)));
+      const escolhidos = disponiveis.filter(l => ids.has(String(l.id)));
+      if (!escolhidos.length) return alert('Selecione um local.');
+      const key = 'checklist_locais_adicionados_v1_' + vistoriaId;
+      const anteriores = lerJSON(key, []);
+      const novos = [...anteriores, ...escolhidos.filter(l => !anteriores.some(a => String(a.id) === String(l.id)))];
+      if (!salvarJSON(key, novos)) return alert('Falha ao salvar locais no aparelho.');
+      for (const l of escolhidos) {
+        if (![...document.querySelectorAll('.sector')].some(e => norm(e.dataset.setor) === norm(l.nome))) {
+          const section = document.createElement('section');
+          section.className = 'sector'; section.dataset.setor = l.nome; section.dataset.localId = l.id;
+          const titulo = document.createElement('h2'); titulo.textContent = l.nome; section.appendChild(titulo);
+          document.getElementById('checklist').appendChild(section);
+          const option = document.createElement('option'); option.value = l.nome; option.textContent = l.nome;
+          document.getElementById('select-local').appendChild(option);
+        }
+      }
+      overlay.remove(); criarBotoesLocais();
+      const select = document.getElementById('select-local'); select.value = escolhidos[0].nome; select.dispatchEvent(new Event('change'));
+    };
+  }
+  function restaurarLocaisAdicionados() {
+    const id = getVistoriaId(); if (!id) return;
+    const locais = lerJSON('checklist_locais_adicionados_v1_' + id, []);
+    const select = document.getElementById('select-local');
+    const checklist = document.getElementById('checklist');
+    locais.forEach(l => {
+      if ([...select.options].some(o => norm(o.value) === norm(l.nome))) return;
+      const section = document.createElement('section'); section.className = 'sector';
+      section.dataset.setor = l.nome; section.dataset.localId = l.id; section.style.display = 'none';
+      const titulo = document.createElement('h2'); titulo.textContent = l.nome; section.appendChild(titulo);
+      checklist.appendChild(section);
+      const option = document.createElement('option'); option.value = l.nome; option.textContent = l.nome; select.appendChild(option);
+    });
+  }
   function criarInterface() {
     if (document.getElementById('add-item-overlay')) { criarBotoesLocais(); return; }
     const overlay = document.createElement('div'); overlay.id = 'add-item-overlay';
@@ -123,6 +195,7 @@
 
   function iniciar() {
     criarInterface();
+    restaurarLocaisAdicionados(); criarBotoesLocais();
     if (navigator.onLine) atualizarCacheMestre();
     sincronizarFila(); window.addEventListener('online', sincronizarFila);
     const checklist = document.getElementById('checklist'); if (checklist) { const observer = new MutationObserver(() => criarBotoesLocais()); observer.observe(checklist, { childList: true }); }
