@@ -35,25 +35,48 @@
   function salvarFila(fila) { salvarJSON(FILA, fila); }
 
   function criarBotoesLocais() {
-    
     document.querySelectorAll('.sector').forEach(section => {
       const local = section.dataset.setor || '';
-      if (!local || section.querySelector('.acoes-local-extra')) return;
-      const grupo = document.createElement('div'); grupo.className = 'acoes-local-extra';
-      grupo.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:16px 8px 6px;width:calc(100% - 16px)';
-      const adicionarLocal = document.createElement('button');
-      adicionarLocal.type = 'button'; adicionarLocal.className = 'btn';
-      adicionarLocal.textContent = '+ Adicionar local';
-      adicionarLocal.addEventListener('click', abrirSelecaoLocais);
-      const botao = document.createElement('button');
-      botao.type = 'button'; botao.className = 'btn btn-adicionar-item-local'; botao.textContent = '+ Adicionar item'; botao.dataset.local = local;
-      botao.addEventListener('click', () => abrir(local));
-      adicionarLocal.style.cssText = 'min-width:0;width:100%;padding:10px 5px;font-size:13px;white-space:nowrap';
-      botao.style.cssText = 'min-width:0;width:100%;padding:10px 5px;font-size:13px;white-space:nowrap;margin:0';
-      grupo.append(adicionarLocal, botao); section.appendChild(grupo);
+      if (!local) return;
+      // Reaproveita os botoes existentes, mesmo quando vierem de uma versao anterior.
+      let grupo = section.querySelector('.acoes-local-extra');
+      const botoesAntigos = [...section.querySelectorAll(':scope > .btn-adicionar-item-local, :scope > .btn-adicionar-local')];
+      if (!grupo) {
+        grupo = document.createElement('div');
+        grupo.className = 'acoes-local-extra';
+        section.appendChild(grupo);
+      }
+      grupo.style.setProperty('display', 'grid', 'important');
+      grupo.style.setProperty('grid-template-columns', 'minmax(0, 1fr) minmax(0, 1fr)', 'important');
+      grupo.style.setProperty('gap', '8px', 'important');
+      grupo.style.setProperty('width', '100%', 'important');
+      grupo.style.setProperty('margin', '12px 0 6px', 'important');
+      let novo = grupo.querySelector('.btn-adicionar-local') || botoesAntigos.find(b => b.classList.contains('btn-adicionar-local'));
+      if (!novo) {
+        novo = document.createElement('button');
+        novo.type = 'button'; novo.className = 'btn btn-adicionar-local';
+        novo.textContent = '+ Adicionar local';
+        novo.addEventListener('click', abrirSelecaoLocais);
+      }
+      let item = grupo.querySelector('.btn-adicionar-item-local') || botoesAntigos.find(b => b.classList.contains('btn-adicionar-item-local'));
+      if (!item) {
+        item = document.createElement('button');
+        item.type = 'button'; item.className = 'btn btn-adicionar-item-local';
+        item.textContent = '+ Adicionar item'; item.dataset.local = local;
+        item.addEventListener('click', () => abrir(local));
+      }
+      for (const botao of [novo, item]) {
+        botao.style.setProperty('display', 'block', 'important');
+        botao.style.setProperty('width', '100%', 'important');
+        botao.style.setProperty('min-width', '0', 'important');
+        botao.style.setProperty('margin', '0', 'important');
+        botao.style.setProperty('padding', '10px 3px', 'important');
+        botao.style.setProperty('font-size', '12px', 'important');
+        botao.style.setProperty('white-space', 'nowrap', 'important');
+      }
+      grupo.append(novo, item);
     });
   }
-
 
   const LOCAIS_KEY = 'checklist_locais_disponiveis_v1';
   async function abrirSelecaoLocais() {
@@ -124,7 +147,7 @@
     const overlay = document.createElement('div'); overlay.id = 'add-item-overlay';
     overlay.innerHTML = `<div class="add-item-dialog" role="dialog" aria-modal="true" aria-labelledby="add-item-titulo"><div class="add-item-cabecalho"><div><h3 id="add-item-titulo">Selecionar itens</h3><div id="add-item-local" class="add-item-local"></div></div><button id="add-item-fechar" type="button" aria-label="Fechar">×</button></div><input id="add-item-busca" type="search" placeholder="Pesquisar item... (opcional)" autocomplete="off"><div id="add-item-lista" class="add-item-lista"></div><div class="add-item-rodape"><span id="add-item-contador">0 selecionados</span><button id="add-item-cancelar" type="button" class="add-item-sec">Cancelar</button><button id="add-item-confirmar" type="button" class="btn">Adicionar selecionados</button></div></div>`;
     document.body.appendChild(overlay);
-    const style = document.createElement('style'); style.textContent = `.btn-adicionar-item-local{display:block;margin:16px auto 6px;min-height:42px;padding:9px 18px}#add-item-overlay{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55)}#add-item-overlay.aberto{display:flex}.add-item-dialog{width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.25)}.add-item-cabecalho{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.add-item-cabecalho h3{margin:0;color:#163a5f}.add-item-local{font-size:13px;color:#64748b;margin-top:4px}#add-item-fechar{border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:#475569}#add-item-busca{width:100%;margin:14px 0 10px;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}.add-item-lista{overflow:auto;border:1px solid #e2e8f0;border-radius:9px;min-height:120px}.add-item-opcao{display:flex;gap:10px;align-items:flex-start;padding:11px;border-bottom:1px solid #eef2f7;cursor:pointer}.add-item-opcao:last-child{border-bottom:0}.add-item-opcao input{width:18px;height:18px;flex:0 0 auto;margin-top:1px}.add-item-opcao span{font-size:14px;line-height:1.35}.add-item-vazio{padding:18px;text-align:center;color:#64748b}.add-item-rodape{display:flex;gap:8px;align-items:center;margin-top:12px}.add-item-rodape span{margin-right:auto;font-size:13px;color:#64748b}.add-item-rodape button{min-height:42px;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}.add-item-sec{border:0;background:#eef2f7;color:#334155}@media(max-width:600px){.btn-adicionar-item-local{width:calc(100% - 16px)}.add-item-dialog{max-height:92vh}.add-item-rodape{display:grid;grid-template-columns:1fr 1fr}.add-item-rodape span{grid-column:1/-1}.add-item-rodape button{width:100%;padding:8px 6px;font-size:13px}}`;
+    const style = document.createElement('style'); style.textContent = `.btn-adicionar-item-local{min-height:42px}#add-item-overlay{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.55)}#add-item-overlay.aberto{display:flex}.add-item-dialog{width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:14px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.25)}.add-item-cabecalho{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.add-item-cabecalho h3{margin:0;color:#163a5f}.add-item-local{font-size:13px;color:#64748b;margin-top:4px}#add-item-fechar{border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:#475569}#add-item-busca{width:100%;margin:14px 0 10px;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}.add-item-lista{overflow:auto;border:1px solid #e2e8f0;border-radius:9px;min-height:120px}.add-item-opcao{display:flex;gap:10px;align-items:flex-start;padding:11px;border-bottom:1px solid #eef2f7;cursor:pointer}.add-item-opcao:last-child{border-bottom:0}.add-item-opcao input{width:18px;height:18px;flex:0 0 auto;margin-top:1px}.add-item-opcao span{font-size:14px;line-height:1.35}.add-item-vazio{padding:18px;text-align:center;color:#64748b}.add-item-rodape{display:flex;gap:8px;align-items:center;margin-top:12px}.add-item-rodape span{margin-right:auto;font-size:13px;color:#64748b}.add-item-rodape button{min-height:42px;border-radius:8px;padding:9px 12px;font-weight:700;cursor:pointer}.add-item-sec{border:0;background:#eef2f7;color:#334155}@media(max-width:600px){.acoes-local-extra button{min-width:0}.add-item-dialog{max-height:92vh}.add-item-rodape{display:grid;grid-template-columns:1fr 1fr}.add-item-rodape span{grid-column:1/-1}.add-item-rodape button{width:100%;padding:8px 6px;font-size:13px}}`;
     document.head.appendChild(style);
     document.getElementById('add-item-fechar').addEventListener('click', fechar); document.getElementById('add-item-cancelar').addEventListener('click', fechar); document.getElementById('add-item-busca').addEventListener('input', renderLista); document.getElementById('add-item-confirmar').addEventListener('click', adicionarSelecionados);
     overlay.addEventListener('click', e => { if (e.target === overlay) fechar(); });
