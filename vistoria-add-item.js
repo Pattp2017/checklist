@@ -35,10 +35,10 @@
   function salvarFila(fila) { salvarJSON(FILA, fila); }
 
   function criarBotoesLocais() {
-    document.querySelectorAll('.acoes-local-extra').forEach(b => b.remove());
+    
     document.querySelectorAll('.sector').forEach(section => {
       const local = section.dataset.setor || '';
-      if (!local) return;
+      if (!local || section.querySelector('.acoes-local-extra')) return;
       const grupo = document.createElement('div'); grupo.className = 'acoes-local-extra';
       grupo.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px';
       const adicionarLocal = document.createElement('button');
