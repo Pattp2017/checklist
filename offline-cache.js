@@ -46,39 +46,18 @@
     el.style.color = tipo === 'offline' ? '#725600' : '#176b39';
   }
 
-  function setNetworkBorder(online) {
-    // Elemento próprio em vez de pseudo-elemento do <html>.
-    // Em navegadores móveis o html::after pode acompanhar a área rolável
-    // quando a barra do navegador muda de tamanho, dando a impressão de
-    // que o retângulo "anda" pela tela.
-    let border = document.getElementById('checklist-network-border');
-    if (!border) {
-      border = document.createElement('div');
-      border.id = 'checklist-network-border';
-      border.setAttribute('aria-hidden', 'true');
-      border.style.cssText = [
-        'position:fixed',
-        'top:0',
-        'right:0',
-        'bottom:0',
-        'left:0',
-        'width:100vw',
-        'height:100dvh',
-        'box-sizing:border-box',
-        'pointer-events:none',
-        'z-index:2147483647',
-        'border:3px solid #22c55e',
-        'transition:border-color .25s ease',
-        'transform:translateZ(0)'
-      ].join(';');
-      (document.body || document.documentElement).appendChild(border);
-    }
-    border.style.borderColor = online ? '#22c55e' : '#f59e0b';
+  function setNetworkBackground(online) {
+    // Indicação discreta no fundo da página, sem borda fixa sobre os botões.
+    const cor = online ? '' : '#fff3e6';
+    document.documentElement.style.backgroundColor = cor;
+    document.body.style.backgroundColor = cor;
+    const bordaAntiga = document.getElementById('checklist-network-border');
+    if (bordaAntiga) bordaAntiga.remove();
   }
 
   function updateNetworkStatus() {
     const online = navigator.onLine;
-    setNetworkBorder(online);
+    setNetworkBackground(online);
 
     if (!online) setBanner('📴 Modo offline • dados permanecem neste aparelho', 'offline');
     else {
