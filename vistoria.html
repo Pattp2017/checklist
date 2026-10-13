@@ -309,6 +309,7 @@
 
       console.warn('Servidor indisponível. Usando cache offline.', erroOnline);
       vistoria = cache.vistoria || null;
+      checklistDocumental = /documental|documentaç|documentos/i.test(vistoria?.modelo_nome || '');
       initialData = cache.modelo;
       preencherMetadados(vistoria);
       window.ChecklistOffline?.updateNetworkStatus();
