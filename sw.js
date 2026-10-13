@@ -1,8 +1,10 @@
-const CACHE_NAME = 'checklist-agro-shell-v2';
+const CACHE_NAME = 'checklist-agro-shell-v3';
 const ASSETS = [
   './',
   './index.html',
   './vistoria.html',
+  './checklists.html',
+  './novo-checklist.html',
   './styles.css',
   './offline-cache.js',
   './persist.js',
