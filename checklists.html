@@ -374,6 +374,32 @@
 
   let vistorias = [];
 
+  const INDICE_OFFLINE = 'checklist_indice_vistorias_v1';
+  function carregarIndiceLocal() {
+    const registros = [];
+    try {
+      const salvos = JSON.parse(localStorage.getItem(INDICE_OFFLINE) || '[]');
+      if (Array.isArray(salvos)) registros.push(...salvos);
+    } catch (_) {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const chave = localStorage.key(i);
+      if (!chave || !chave.startsWith('checklist_offline_v1_')) continue;
+      try {
+        const cache = JSON.parse(localStorage.getItem(chave) || 'null');
+        if (cache?.vistoria?.id && cache?.modelo?.length) registros.push(cache.vistoria);
+      } catch (_) {}
+    }
+    return [...new Map(registros.filter(v => v?.id).map(v => [String(v.id), v])).values()];
+  }
+  function guardarIndiceLocal(lista) {
+    try {
+      const mapa = new Map(carregarIndiceLocal().map(v => [String(v.id), v]));
+      lista.forEach(v => { if (v?.id) mapa.set(String(v.id), v); });
+      localStorage.setItem(INDICE_OFFLINE, JSON.stringify([...mapa.values()]));
+    } catch (erro) { console.warn('Falha no índice offline:', erro); }
+  }
+
+
 
   document
     .getElementById('btn-voltar')
@@ -1043,6 +1069,7 @@ card.appendChild(
               texto
             )
           : [];
+      guardarIndiceLocal(vistorias);
 
 
       renderizar();
@@ -1064,8 +1091,16 @@ card.appendChild(
         'mensagem erro';
 
 
+      vistorias = carregarIndiceLocal();
+      if (vistorias.length) {
+        renderizar();
+        mensagemEl.style.display = 'block';
+        mensagemEl.className = 'mensagem';
+        mensagemEl.textContent = 'Modo offline: checklists armazenados neste aparelho.';
+        return;
+      }
       mensagemEl.textContent =
-        'Não foi possível carregar os checklists. ' +
+        'Não foi possível carregar os checklists. Nenhum checklist disponível neste aparelho. ' +
         (
           erro?.message ||
           String(erro)
