@@ -90,11 +90,6 @@
     <label>Responsável pela auditoria:<input id="meta-responsavel-auditoria" type="text" placeholder="Responsável pela auditoria" /></label>
     <label>Data da auditoria:<input id="meta-data-auditoria" type="date" /></label>
     <label>Horário:<input id="meta-horario" type="text" readonly /></label>
-    <div class="meta-actions">
-      <button class="btn-save" id="btn-salvar-meta" type="button">Salvar</button>
-      <button class="btn" id="btn-concluir-checklist" type="button">Concluir Checklist</button>
-      <button class="btn" id="btn-cancelar-checklist" type="button" style="background:#c53030;">Cancelar checklist</button>
-    </div>
   </div>
 
   <div class="controls-top">
@@ -105,6 +100,13 @@
   </div>
 
   <div id="checklist"><div style="padding:16px;text-align:center;">Carregando checklist...</div></div>
+
+  <div class="meta-actions">
+      <button class="btn-save" id="btn-salvar-meta" type="button">Salvar</button>
+      <button class="btn" id="btn-concluir-checklist" type="button">Concluir Checklist</button>
+      <button class="btn" id="btn-cancelar-checklist" type="button" style="background:#c53030;">Cancelar checklist</button>
+    </div>
+
 
   <div id="saida-overlay" class="saida-overlay" role="dialog" aria-modal="true" aria-labelledby="saida-titulo">
     <div class="saida-dialog">
