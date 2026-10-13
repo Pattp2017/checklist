@@ -40,7 +40,7 @@
       const local = section.dataset.setor || '';
       if (!local || section.querySelector('.acoes-local-extra')) return;
       const grupo = document.createElement('div'); grupo.className = 'acoes-local-extra';
-      grupo.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px';
+      grupo.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:16px 8px 6px;width:calc(100% - 16px)';
       const adicionarLocal = document.createElement('button');
       adicionarLocal.type = 'button'; adicionarLocal.className = 'btn';
       adicionarLocal.textContent = '+ Adicionar local';
@@ -48,6 +48,8 @@
       const botao = document.createElement('button');
       botao.type = 'button'; botao.className = 'btn btn-adicionar-item-local'; botao.textContent = '+ Adicionar item'; botao.dataset.local = local;
       botao.addEventListener('click', () => abrir(local));
+      adicionarLocal.style.cssText = 'min-width:0;width:100%;padding:10px 5px;font-size:13px;white-space:nowrap';
+      botao.style.cssText = 'min-width:0;width:100%;padding:10px 5px;font-size:13px;white-space:nowrap;margin:0';
       grupo.append(adicionarLocal, botao); section.appendChild(grupo);
     });
   }
