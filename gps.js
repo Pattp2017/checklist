@@ -19,5 +19,6 @@ function capturar(){const n=atual(),msg=document.getElementById('gps-msg'),btn=d
 async function carregar(){if(vistoriaId)try{let x=await fetch(`${cfg.supabaseUrl}/rest/v1/checklist_vistoria_locais?vistoria_id=eq.${encodeURIComponent(vistoriaId)}&select=*`,{headers:headers()});if(x.ok)(await x.json()).forEach(r=>cache.set(r.local_nome_snapshot,r));x=await fetch(`${cfg.supabaseUrl}/rest/v1/checklist_vistorias?id=eq.${encodeURIComponent(vistoriaId)}&select=status`,{headers:headers()});if(x.ok&&((await x.json())?.[0]?.status==='FINALIZADA'))leitura=true}catch(e){console.warn('GPS: consulta online indisponivel.',e)}mergePend();render()}
 async function sincronizar(){if(!vistoriaId||!navigator.onLine)return;for(const[n,r]of Object.entries(pend()))try{const s=await salvar(r);cache.set(n,s);limpaPendente(n)}catch(e){console.warn('GPS ainda pendente:',n,e)}render()}
 box.addEventListener('click',event=>{if(event.target.closest('#btn-gps-local'))capturar()});
+box.addEventListener('click',event=>{if(event.target.closest('#btn-gps-local'))capturar()});
 select.addEventListener('change',render);window.addEventListener('online',sincronizar);carregar().then(sincronizar);
 })();
