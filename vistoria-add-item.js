@@ -38,43 +38,35 @@
     document.querySelectorAll('.sector').forEach(section => {
       const local = section.dataset.setor || '';
       if (!local) return;
-      // Reaproveita os botoes existentes, mesmo quando vierem de uma versao anterior.
-      let grupo = section.querySelector('.acoes-local-extra');
-      const botoesAntigos = [...section.querySelectorAll(':scope > .btn-adicionar-item-local, :scope > .btn-adicionar-local')];
+      const antigos = [...section.querySelectorAll('.acoes-local-extra, .btn-adicionar-local, .btn-adicionar-item-local')];
+      let grupo = section.querySelector(':scope > .acoes-local-extra');
       if (!grupo) {
         grupo = document.createElement('div');
         grupo.className = 'acoes-local-extra';
         section.appendChild(grupo);
       }
-      grupo.style.setProperty('display', 'grid', 'important');
-      grupo.style.setProperty('grid-template-columns', 'minmax(0, 1fr) minmax(0, 1fr)', 'important');
-      grupo.style.setProperty('gap', '8px', 'important');
-      grupo.style.setProperty('width', '100%', 'important');
-      grupo.style.setProperty('margin', '12px 0 6px', 'important');
-      let novo = grupo.querySelector('.btn-adicionar-local') || botoesAntigos.find(b => b.classList.contains('btn-adicionar-local'));
+      // Reaproveitar somente os botoes da primeira dupla; remover duplicatas antigas.
+      const botoes = antigos.flatMap(el => el.classList.contains('acoes-local-extra') ? [...el.querySelectorAll('button')] : [el]);
+      let novo = botoes.find(el => el.classList.contains('btn-adicionar-local'));
+      let item = botoes.find(el => el.classList.contains('btn-adicionar-item-local'));
       if (!novo) {
         novo = document.createElement('button');
         novo.type = 'button'; novo.className = 'btn btn-adicionar-local';
         novo.textContent = '+ Adicionar local';
         novo.addEventListener('click', abrirSelecaoLocais);
       }
-      let item = grupo.querySelector('.btn-adicionar-item-local') || botoesAntigos.find(b => b.classList.contains('btn-adicionar-item-local'));
       if (!item) {
         item = document.createElement('button');
         item.type = 'button'; item.className = 'btn btn-adicionar-item-local';
-        item.textContent = '+ Adicionar item'; item.dataset.local = local;
-        item.addEventListener('click', () => abrir(local));
+        item.textContent = '+ Adicionar item';
+        item.addEventListener('click', () => abrir(section.dataset.setor));
       }
-      for (const botao of [novo, item]) {
-        botao.style.setProperty('display', 'block', 'important');
-        botao.style.setProperty('width', '100%', 'important');
-        botao.style.setProperty('min-width', '0', 'important');
-        botao.style.setProperty('margin', '0', 'important');
-        botao.style.setProperty('padding', '10px 3px', 'important');
-        botao.style.setProperty('font-size', '12px', 'important');
-        botao.style.setProperty('white-space', 'nowrap', 'important');
-      }
-      grupo.append(novo, item);
+      antigos.forEach(el => { if (el !== grupo) el.remove(); });
+      grupo.replaceChildren(novo, item);
+      grupo.style.cssText = 'display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;width:100%!important;margin:12px 0 6px!important';
+      [novo,item].forEach(botao => {
+        botao.style.cssText = 'display:block!important;width:100%!important;min-width:0!important;margin:0!important;padding:10px 3px!important;font-size:12px!important;white-space:nowrap!important';
+      });
     });
   }
 
