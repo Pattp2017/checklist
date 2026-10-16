@@ -106,8 +106,9 @@
       if (!arquivos.length) continue;
       const caminhos = [];
       for (const arquivo of arquivos) caminhos.push(await uploadFoto(vistoriaId, item.setor, item.item, arquivo));
-      // Compatibilidade: foto_path mantém a primeira imagem para leitores antigos.
-      item.foto_path = caminhos[0];
+      // Uma string com a primeira foto para leitores antigos; lista completa
+      // no mesmo campo, sem exigir migração imediata do banco.
+      item.foto_path = caminhos.length === 1 ? caminhos[0] : JSON.stringify(caminhos);
       item.arquivar_foto = true;
     }
     await apagarItens(vistoriaId);
