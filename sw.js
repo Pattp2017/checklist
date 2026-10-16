@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checklist-agro-shell-v5';
+const CACHE_NAME = 'checklist-agro-shell-v6';
 const ASSETS = [
   './',
   './index.html',
