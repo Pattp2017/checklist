@@ -100,6 +100,7 @@
 
   async function salvarItens(vistoriaId) {
     const itens = getItensChecklist(vistoriaId);
+    let totalFotosEnviadas = 0;
     for (const item of itens) {
       if (!window.VistoriaFotos || typeof window.VistoriaFotos.getFotoPorDados !== 'function') break;
       const arquivos = window.VistoriaFotos.getFotosPorDados?.(item.setor, item.item) || [];
@@ -109,6 +110,7 @@
       // Persistir todos os caminhos em uma única coluna TEXT.
       item.foto_path = caminhos.length === 1 ? caminhos[0] : JSON.stringify(caminhos);
       item.arquivar_foto = true;
+      totalFotosEnviadas += caminhos.length;
       console.info('[Fotos] Item:', item.item, 'selecionadas:', arquivos.length, 'enviadas:', caminhos.length);
     }
     await apagarItens(vistoriaId);
@@ -124,7 +126,17 @@
         throw new Error('A lista de fotografias do item "' + item.item + '" não foi gravada integralmente. Verifique o tipo e o tamanho do campo foto_path no Supabase.');
       }
     }
-    return itens;
+    const totalRegistrado = gravados.reduce((total, registro) => {
+      if (!registro.foto_path) return total;
+      try {
+        const valor = JSON.parse(registro.foto_path);
+        return total + (Array.isArray(valor) ? valor.length : 1);
+      } catch (_) { return total + 1; }
+    }, 0);
+    if (totalFotosEnviadas && totalRegistrado < totalFotosEnviadas) {
+      throw new Error('Foram enviadas ' + totalFotosEnviadas + ' fotos, mas somente ' + totalRegistrado + ' foram registradas no banco.');
+    }
+    return { itens, totalFotosEnviadas, totalRegistrado };
   }
 
   function validarItensNC() {
@@ -216,10 +228,10 @@
       if (vistoriaId) vistoria = await atualizarVistoria(vistoriaId, dados);
       else { vistoria = await criarVistoria(dados); vistoriaId = vistoria.id; }
       setVistoriaId(vistoriaId);
-      await salvarItens(vistoriaId);
+      const resultadoFotos = await salvarItens(vistoriaId);
       removerPendente(vistoriaId);
       if (window.VistoriaPersist?.saveAll) window.VistoriaPersist.saveAll();
-      alert('Vistoria e itens salvos com sucesso.');
+      alert('Vistoria e itens salvos com sucesso.\\nFotografias registradas no banco: ' + resultadoFotos.totalRegistrado + '.');
       return { ...vistoria, id: vistoriaId };
     } catch (erro) {
       console.error('Falha ao salvar:', erro);
