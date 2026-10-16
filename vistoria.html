@@ -495,14 +495,14 @@
   async function iniciarAplicacao() {
     try {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=5')
+        navigator.serviceWorker.register('sw.js?v=6')
           .catch(erro => console.warn('Service Worker não registrado.', erro));
       }
 
       await carregarModeloChecklist();
       await carregarScript('persist.js?v=14');
       await carregarScript('speech.js?v=13');
-      await carregarScript('db-v8.js?v=18');
+      await carregarScript('db-v8.js?v=19');
       await carregarScript('vistoria-medida-corretiva.js?v=2');
       await carregarScript('photo.js?v=14');
       await carregarScript('gps.js?v=3');
