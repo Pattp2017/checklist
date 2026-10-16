@@ -102,9 +102,12 @@
     const itens = getItensChecklist(vistoriaId);
     for (const item of itens) {
       if (!window.VistoriaFotos || typeof window.VistoriaFotos.getFotoPorDados !== 'function') break;
-      const arquivo = window.VistoriaFotos.getFotoPorDados(item.setor, item.item);
-      if (!arquivo) continue;
-      item.foto_path = await uploadFoto(vistoriaId, item.setor, item.item, arquivo);
+      const arquivos = window.VistoriaFotos.getFotosPorDados?.(item.setor, item.item) || [];
+      if (!arquivos.length) continue;
+      const caminhos = [];
+      for (const arquivo of arquivos) caminhos.push(await uploadFoto(vistoriaId, item.setor, item.item, arquivo));
+      // Compatibilidade: foto_path mantém a primeira imagem para leitores antigos.
+      item.foto_path = caminhos[0];
       item.arquivar_foto = true;
     }
     await apagarItens(vistoriaId);
