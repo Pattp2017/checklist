@@ -54,8 +54,8 @@
         vistoria_id: vistoriaId,
         chave,
         arquivo,
-        nome: arquivo.name || 'foto.jpg',
-        tipo: arquivo.type || 'image/jpeg',
+        nome: Array.isArray(arquivo) ? 'fotos' : arquivo.name || 'foto.jpg',
+        tipo: Array.isArray(arquivo) ? 'image/jpeg' : arquivo.type || 'image/jpeg',
         salvo_em: new Date().toISOString()
       });
       tx.oncomplete = () => resolve(true);
@@ -113,7 +113,7 @@
     else delete row.dataset.temFoto;
     const botao = row.querySelector('.btn-foto');
     if (botao) {
-      botao.textContent = temFoto ? '📷 Foto anexada ✓' : '📷 Foto';
+      botao.textContent = temFoto ? `📷 ${((fotosPendentes.get(getChaveItem(row)) || []).length || 1)} foto(s) ✓` : '📷 Adicionar fotos';
       botao.classList.toggle('foto-ok', temFoto);
     }
   }
@@ -143,40 +143,77 @@
     return new File([blob], 'foto-' + Date.now() + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
   }
 
-  async function registrarFoto(row, arquivo) {
+  async function registrarFotos(row, arquivos) {
     const chave = getChaveItem(row);
+    const botao = row.querySelector('.btn-foto');
+    const anteriores = fotosPendentes.get(chave) || [];
+    const lista = Array.isArray(anteriores) ? anteriores : [anteriores];
     try {
-      marcarBotao(row, false);
-      const botao = row.querySelector('.btn-foto');
-      if (botao) { botao.disabled = true; botao.textContent = '📷 Salvando...'; }
-      const fotoOtimizada = await comprimirFoto(arquivo);
-      await idbSalvar(chave, fotoOtimizada);
-      fotosPendentes.set(chave, fotoOtimizada);
+      if (botao) { botao.disabled = true; botao.textContent = '📷 Processando...'; }
+      const novas = [];
+      for (const arquivo of arquivos) {
+        if (arquivo.type.startsWith('image/')) novas.push(await comprimirFoto(arquivo));
+      }
+      if (!novas.length) return;
+      const todas = [...lista, ...novas];
+      await idbSalvar(chave, todas);
+      fotosPendentes.set(chave, todas);
       marcarBotao(row, true);
+      mostrarMiniaturas(row);
+    } catch (erro) {
+      console.error('Falha ao salvar fotografias:', erro);
+      alert('Não foi possível armazenar as fotografias. Verifique o espaço disponível.');
+    } finally {
       if (botao) botao.disabled = false;
-      console.log('Foto preservada no aparelho:', chave, fotoOtimizada.name, fotoOtimizada.size);
-    } catch (e) {
-      fotosPendentes.delete(chave);
-      marcarBotao(row, false);
-      const botao = row.querySelector('.btn-foto');
-      if (botao) botao.disabled = false;
-      console.error('Falha ao preservar foto no aparelho:', e);
-      alert('A foto não pôde ser armazenada no aparelho. O checklist pode continuar normalmente.');
+      marcarBotao(row, fotosPendentes.has(chave));
     }
+  }
+
+  function mostrarMiniaturas(row) {
+    row.querySelector('.fotos-miniaturas')?.remove();
+    const chave = getChaveItem(row);
+    const arquivos = fotosPendentes.get(chave);
+    if (!arquivos) return;
+    const lista = Array.isArray(arquivos) ? arquivos : [arquivos];
+    const painel = document.createElement('div');
+    painel.className = 'fotos-miniaturas';
+    painel.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin:10px 0';
+    lista.forEach((arquivo, indice) => {
+      const bloco = document.createElement('div');
+      bloco.style.cssText = 'position:relative;width:90px;height:90px';
+      const img = document.createElement('img');
+      const url = URL.createObjectURL(arquivo);
+      img.src = url; img.alt = 'Foto ' + (indice + 1);
+      img.style.cssText = 'width:90px;height:90px;object-fit:cover;border-radius:6px';
+      img.onload = () => URL.revokeObjectURL(url);
+      const excluir = document.createElement('button');
+      excluir.type = 'button'; excluir.textContent = '×'; excluir.title = 'Excluir foto';
+      excluir.style.cssText = 'position:absolute;right:0;top:0;background:#b91c1c;color:white;border:0;border-radius:50%;width:25px;height:25px;cursor:pointer';
+      excluir.addEventListener('click', async () => {
+        const atual = fotosPendentes.get(chave) || [];
+        const restantes = (Array.isArray(atual) ? atual : [atual]).filter((_, i) => i !== indice);
+        if (restantes.length) { await idbSalvar(chave, restantes); fotosPendentes.set(chave, restantes); }
+        else { fotosPendentes.delete(chave); await idbRemover(chave); }
+        marcarBotao(row, restantes.length > 0);
+        mostrarMiniaturas(row);
+      });
+      bloco.append(img, excluir); painel.appendChild(bloco);
+    });
+    (row.querySelector('.campos-nc') || row).appendChild(painel);
   }
 
   function abrirCamera(row) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment';
+    input.multiple = true;
+    // Sem capture: no computador permite selecionar várias fotos de uma vez.
     input.style.display = 'none';
     document.body.appendChild(input);
-    input.addEventListener('change', async function () {
-      const arquivo = input.files && input.files[0];
-      if (arquivo) await registrarFoto(row, arquivo);
+    input.addEventListener('change', async () => {
+      await registrarFotos(row, Array.from(input.files || []));
       input.remove();
-    });
+    }, { once: true });
     input.click();
   }
 
@@ -204,6 +241,7 @@
   function removerBotaoFoto(row) {
     const botao = row.querySelector('.btn-foto');
     if (botao) botao.remove();
+    row.querySelector('.fotos-miniaturas')?.remove();
   }
 
   function atualizarFoto(row) {
@@ -228,6 +266,7 @@
         row.dataset.temFoto = 'true';
         criarBotaoFoto(row);
         marcarBotao(row, true);
+        mostrarMiniaturas(row);
       }
     });
     if (registros.length) console.log(registros.length + ' foto(s) restaurada(s) do armazenamento offline.');
@@ -253,7 +292,8 @@
   else iniciar();
 
   window.VistoriaFotos = {
-    getFoto(row) { return fotosPendentes.get(getChaveItem(row)) || null; },
+    getFoto(row) { const f = fotosPendentes.get(getChaveItem(row)); return Array.isArray(f) ? f[0] : f || null; },
+    getFotosPorDados(setor, item) { const f = fotosPendentes.get(setor + '||' + item); return f ? (Array.isArray(f) ? f : [f]) : []; },
     getFotoPorDados(setor, item) { return fotosPendentes.get(setor + '||' + item) || null; },
     getFotoPorChave(chave) { return fotosPendentes.get(chave) || null; },
     getQuantidade() { return fotosPendentes.size; },
