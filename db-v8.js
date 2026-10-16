@@ -106,13 +106,24 @@
       if (!arquivos.length) continue;
       const caminhos = [];
       for (const arquivo of arquivos) caminhos.push(await uploadFoto(vistoriaId, item.setor, item.item, arquivo));
-      // Uma string com a primeira foto para leitores antigos; lista completa
-      // no mesmo campo, sem exigir migração imediata do banco.
+      // Persistir todos os caminhos em uma única coluna TEXT.
       item.foto_path = caminhos.length === 1 ? caminhos[0] : JSON.stringify(caminhos);
       item.arquivar_foto = true;
+      console.info('[Fotos] Item:', item.item, 'selecionadas:', arquivos.length, 'enviadas:', caminhos.length);
     }
     await apagarItens(vistoriaId);
     await inserirItens(itens);
+    // Conferência de leitura após gravação: evita declarar sucesso com fotos incompletas.
+    const verificacao = await fetch(`${SUPABASE_URL}/rest/v1/${TABELA_ITENS}?vistoria_id=eq.${encodeURIComponent(vistoriaId)}&select=setor,item,foto_path`, { headers: getHeaders() });
+    if (!verificacao.ok) throw new Error('Não foi possível conferir as fotografias salvas.');
+    const gravados = await verificacao.json();
+    for (const item of itens) {
+      if (!item.foto_path) continue;
+      const encontrado = gravados.find(x => x.setor === item.setor && x.item === item.item);
+      if (!encontrado || encontrado.foto_path !== item.foto_path) {
+        throw new Error('A lista de fotografias do item "' + item.item + '" não foi gravada integralmente. Verifique o tipo e o tamanho do campo foto_path no Supabase.');
+      }
+    }
     return itens;
   }
 
