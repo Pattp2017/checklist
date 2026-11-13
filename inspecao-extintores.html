@@ -20,6 +20,13 @@ const medidasCorretivas=[
 ];
 let dados={empresa:'',empresa_id:'',extintores:[]};try{const salvo=JSON.parse(localStorage.getItem(CHAVE));if(salvo&&Array.isArray(salvo.extintores))dados=salvo}catch(e){}
 const lista=document.getElementById('lista'),empresa=document.getElementById('empresa');empresa.value=dados.empresa;const empresaId=document.getElementById('empresa-id'),sugestoes=document.getElementById('empresa-sugestoes');empresaId.value=dados.empresa_id||'';let empresas=[],locaisCadastrados=[];async function carregarLocais(){try{const r=await fetch('https://uofnninqxnsvaemxpwhh.supabase.co/rest/v1/checklist_locais?select=id,nome&ativo=eq.true&order=nome.asc',{headers:{apikey:'sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8',Authorization:'Bearer sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8'}});if(!r.ok)throw new Error('HTTP '+r.status);locaisCadastrados=await r.json()}catch(e){document.getElementById('aviso').textContent='Erro ao carregar locais: '+e.message}}carregarLocais();const normalizar=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();async function carregarEmpresas(){try{const r=await fetch('https://uofnninqxnsvaemxpwhh.supabase.co/rest/v1/empresas?select=id,nome&ativo=eq.true&order=nome.asc',{headers:{apikey:'sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8',Authorization:'Bearer sb_publishable_kCX0kt1EFYYL0sR3zQHDzg_6rLVRJQ8'}});if(!r.ok)throw new Error('HTTP '+r.status);empresas=await r.json();empresa.placeholder='Digite o nome da empresa';}catch(e){document.getElementById('aviso').textContent='Não foi possível carregar empresas: '+e.message}}function sugerir(){empresaId.value='';sugestoes.replaceChildren();const q=normalizar(empresa.value.trim());if(!q)return;empresas.filter(e=>normalizar(e.nome).includes(q)).slice(0,20).forEach(e=>{const b=document.createElement('button');b.type='button';b.textContent=e.nome;b.onclick=()=>{empresa.value=e.nome;empresaId.value=e.id;sugestoes.replaceChildren()};sugestoes.append(b)});if(!sugestoes.children.length)sugestoes.textContent='Nenhuma empresa encontrada.'}empresa.addEventListener('input',sugerir);carregarEmpresas();
+async function reduzirFoto(arquivo){
+ return new Promise((resolve,reject)=>{
+  const img=new Image(),url=URL.createObjectURL(arquivo);
+  img.onload=()=>{try{const max=1100,escala=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement('canvas');canvas.width=Math.round(img.width*escala);canvas.height=Math.round(img.height*escala);canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',0.65))}catch(e){reject(e)}finally{URL.revokeObjectURL(url)}};
+  img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Imagem inválida'))};img.src=url;
+ })
+}
 function novo(){return {id:crypto.randomUUID(),local:'',tipo:'',capacidade:'',serie:'',manutencao:'',respostas:{},observacao:''}}
 function render(){lista.replaceChildren();dados.extintores.forEach((e,i)=>{const card=document.createElement('section');card.className='card';const h=document.createElement('h2');h.textContent='EXT-'+String(i+1).padStart(3,'0');card.append(h);const grid=document.createElement('div');grid.className='grid';card.append(grid);
 function campo(nome,chave,tipo='text'){const wrap=document.createElement('div'),label=document.createElement('label'),input=document.createElement('input');label.textContent=nome;input.type=tipo;input.value=e[chave]||'';input.addEventListener('input',()=>{e[chave]=input.value});wrap.append(label,input);grid.append(wrap)}
@@ -34,6 +41,17 @@ if(e.respostas[j]==='NC'){
  const tituloRec=document.createElement('label');tituloRec.textContent='Medida corretiva recomendada';
  const rec=document.createElement('textarea');rec.rows=3;rec.value=det.recomendacao;rec.oninput=()=>det.recomendacao=rec.value;
  div.append(titulo,obs,tituloRec,rec);
+ const fotosTitulo=document.createElement('label');fotosTitulo.textContent='Fotos da não conformidade (até 3)';
+ const fotosInput=document.createElement('input');fotosInput.type='file';fotosInput.accept='image/*';fotosInput.multiple=true;
+ const fotosPreview=document.createElement('div');fotosPreview.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
+ function mostrarFotos(){
+  fotosPreview.replaceChildren();
+  (det.fotos||[]).forEach((foto,indice)=>{const bloco=document.createElement('div');bloco.style.cssText='width:110px;display:flex;flex-direction:column;gap:4px';const img=document.createElement('img');img.src=foto;img.alt='Foto '+(indice+1);img.style.cssText='width:110px;height:95px;object-fit:contain;border:1px solid #ddd;border-radius:6px';const excluir=document.createElement('button');excluir.type='button';excluir.className='danger';excluir.textContent='Remover';excluir.onclick=()=>{det.fotos.splice(indice,1);mostrarFotos()};bloco.append(img,excluir);fotosPreview.append(bloco)})
+ }
+ fotosInput.onchange=async()=>{const arquivos=Array.from(fotosInput.files||[]);det.fotos=det.fotos||[];if(arquivos.length+det.fotos.length>3){alert('Máximo de 3 fotos por não conformidade.');fotosInput.value='';return}
+  try{const convertidas=await Promise.all(arquivos.map(reduzirFoto));det.fotos.push(...convertidas);mostrarFotos()}catch(erro){alert('Falha ao adicionar foto: '+erro.message)}finally{fotosInput.value=''}
+ };
+ div.append(fotosTitulo,fotosInput,fotosPreview);mostrarFotos();
 }
 card.append(div)});
 const lab=document.createElement('label');lab.textContent='Observações';const area=document.createElement('textarea');area.rows=3;area.value=e.observacao||'';area.addEventListener('input',()=>e.observacao=area.value);card.append(lab,area);const remove=document.createElement('button');remove.className='danger';remove.textContent='Excluir extintor';remove.onclick=()=>{if(confirm('Excluir este extintor da ronda?')){dados.extintores.splice(i,1);render()}};card.append(remove);lista.append(card)})}
