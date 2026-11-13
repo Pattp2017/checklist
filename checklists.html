@@ -324,7 +324,7 @@
       <table>
         <thead>
           <tr>
-            <th>Empresa / Fazenda</th>
+            <th>Empresa / Fazenda</th><th>Tipo</th>
             <th>Status</th>
             <th>Data da auditoria</th>
             <th>Última atualização</th>
@@ -531,6 +531,7 @@
     );
 
 
+    if(vistoria.tipo_registro==='EXTINTORES'){abrirExtintores(vistoria,false);return;}
     const modo =
       vistoria.status ===
       'FINALIZADA'
@@ -546,12 +547,31 @@
   function abrirRelatorio(
     vistoria
   ) {
+    if(vistoria.tipo_registro==='EXTINTORES'){abrirExtintores(vistoria,true);return;}
 
     window.location.href =
       `https://pattp2017.github.io/sst-vision/relatorio-visita.html?vistoria_id=${encodeURIComponent(vistoria.id)}`;
   }
 
 
+  function abrirExtintores(vistoria,relatorio){
+    try{
+      const d=vistoria.dados_extintores;
+      if(!d)throw Error('Dados da ronda indisponíveis.');
+      localStorage.setItem('checklist_extintores_ronda_v1',JSON.stringify({...d,ronda_id:vistoria.id}));
+      window.location.href=relatorio?'relatorio-extintores.html':'inspecao-extintores.html';
+    }catch(e){alert('Não foi possível abrir a ronda: '+e.message)}
+  }
+  async function carregarExtintores(){
+    const resposta=await fetch(SUPABASE_URL+'/rest/v1/checklist_extintores_rondas?select=id,empresa_id,empresa_nome,usuario_id,data_inspecao,atualizado_em,dados&order=data_inspecao.desc&limit=1000',{headers:headers()});
+    if(!resposta.ok)throw Error('Extintores HTTP '+resposta.status);
+    return (await resposta.json()).map(r=>({
+      id:r.id,empresa_id:r.empresa_id,empresa_nome:r.empresa_nome,
+      data_auditoria:r.data_inspecao,atualizado_em:r.atualizado_em,
+      responsavel_auditoria:'Inspeção de extintores',status:'FINALIZADA',
+      tipo_registro:'EXTINTORES',dados_extintores:r.dados
+    }));
+  }
   function criarStatus(
     vistoria
   ) {
@@ -731,6 +751,7 @@
     tdEmpresa.appendChild(
       empresa
     );
+    const tdTipo=document.createElement("td");tdTipo.textContent=vistoria.tipo_registro==="EXTINTORES"?"Extintores":"Checklist SST";
 
 
     const tdStatus =
@@ -797,6 +818,7 @@
     tr.appendChild(
       tdEmpresa
     );
+    tr.appendChild(tdTipo);
 
     tr.appendChild(
       tdStatus
@@ -910,6 +932,7 @@ card.appendChild(
   empresa
 );
 
+    if(vistoria.tipo_registro==='EXTINTORES'){const tipo=document.createElement('div');tipo.textContent='🧯 Checklist de Extintores';tipo.style.marginBottom='8px';card.appendChild(tipo)}
     card.appendChild(
       status
     );
@@ -1070,8 +1093,11 @@ card.appendChild(
             )
           : [];
       guardarIndiceLocal(vistorias);
-
-
+      try{
+        const extintores=await carregarExtintores();
+        vistorias.push(...extintores);
+        vistorias.sort((a,b)=>new Date(b.data_auditoria||0)-new Date(a.data_auditoria||0));
+      }catch(e){console.warn('Não foi possível carregar rondas de extintores:',e);mensagemEl.textContent='Extintores indisponíveis: '+e.message;}
       renderizar();
 
 
